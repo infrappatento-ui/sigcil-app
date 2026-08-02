@@ -58,7 +58,7 @@
           <!-- Selector Multidepósito Dinámico -->
           <div class="text-right">
             <label class="block text-xs font-bold text-gray-600 mb-1">Sucursal / Depósito:</label>
-            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog();" class="p-2 border rounded text-xs bg-slate-50 font-semibold">
+            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders();" class="p-2 border rounded text-xs bg-slate-50 font-semibold">
               <option value="">Cargando sucursales...</option>
             </select>
           </div>
@@ -66,13 +66,14 @@
           <button onclick="logout()" class="text-xs text-red-600 underline ml-4">Cerrar Sesión</button>
         </div>
 
-        <!-- Pestañas de Vista (Operativa vs Consolidado) -->
+        <!-- Pestañas de Navegación -->
         <div class="flex border-b mb-6 text-xs font-bold" id="view-tabs">
           <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-4 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
+          <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Pedidos Mensuales</button>
           <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada (Coordinación)</button>
         </div>
 
-        <!-- Seccion Vista Operativa -->
+        <!-- Sección 1: Vista Operativa -->
         <div id="view-operational">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <!-- Columna Izquierda: Listado de Stock -->
@@ -84,7 +85,6 @@
                   <span id="total-cost-val" class="text-sm font-extrabold text-emerald-700">$0.00</span>
                 </div>
               </div>
-              
               <div id="stock-list" class="space-y-2">
                 <p class="text-xs text-gray-500">Cargando datos en tiempo real...</p>
               </div>
@@ -97,7 +97,7 @@
                 <button id="tab-ingress-btn" onclick="switchTab('ingress')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 w-1/2 text-center">Ingreso / Compra</button>
               </div>
 
-              <!-- Formulario Consumo (RN-001) -->
+              <!-- Formulario Consumo -->
               <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
                 <div>
                   <label class="block text-xs font-bold text-gray-700">Producto</label>
@@ -120,7 +120,7 @@
                 <button type="submit" id="btn-submit-consume" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
               </form>
 
-              <!-- Formulario Ingreso (RN-002) -->
+              <!-- Formulario Ingreso -->
               <form id="ingress-form" onsubmit="handleIngress(event)" class="space-y-3 hidden">
                 <div>
                   <label class="block text-xs font-bold text-gray-700">Producto (Catálogo General)</label>
@@ -147,7 +147,7 @@
             </div>
           </div>
 
-          <!-- Módulo de Auditoría y Trazabilidad (RN-002) -->
+          <!-- Módulo de Auditoría -->
           <div class="border-t pt-6">
             <div class="flex justify-between items-center mb-3">
               <h2 class="text-lg font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
@@ -168,23 +168,79 @@
                   </tr>
                 </thead>
                 <tbody id="audit-table-body">
-                  <tr>
-                    <td colspan="6" class="p-3 text-center text-gray-500">Cargando registros de auditoría...</td>
-                  </tr>
+                  <tr><td colspan="6" class="p-3 text-center text-gray-500">Cargando registros...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- Seccion Vista Consolidada -->
+        <!-- Sección 2: Módulo de Pedidos Mensuales (EO-001 / EO-002) -->
+        <div id="view-orders" class="hidden">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
+            <button onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">
+              + Nuevo Pedido Mensual
+            </button>
+          </div>
+
+          <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
+            <table class="w-full text-left text-xs text-gray-600">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5">ID</th>
+                  <th class="p-2.5">Período</th>
+                  <th class="p-2.5">Sucursal</th>
+                  <th class="p-2.5">Estado</th>
+                  <th class="p-2.5">Costo Estimado</th>
+                  <th class="p-2.5">Creado Por</th>
+                  <th class="p-2.5">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <tr><td colspan="7" class="p-3 text-center text-gray-500">Cargando historial de pedidos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Formulario Nuevo Pedido (Modal Integrado) -->
+          <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
+            <h3 class="text-sm font-bold text-slate-800 mb-3 border-b pb-2">Confección de Pedido Mensual</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Período (Año-Mes):</label>
+                <input type="month" id="order-period" class="w-full p-2 border rounded text-xs bg-white" required>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Observaciones / Justificación:</label>
+                <input type="text" id="order-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Pedido regular del mes">
+              </div>
+            </div>
+
+            <h4 class="text-xs font-bold text-gray-700 mb-2">Detalle de Productos Solicitados:</h4>
+            <div id="order-items-list" class="space-y-2 mb-4">
+              <!-- Renglones de insumos -->
+            </div>
+
+            <div class="flex justify-between items-center border-t pt-3">
+              <div>
+                <span class="text-xs text-gray-600 block">Costo Estimado Total:</span>
+                <span id="order-total-cost" class="text-base font-extrabold text-emerald-700">$0.00</span>
+              </div>
+              <div class="space-x-2">
+                <button onclick="closeNewOrderModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
+                <button onclick="submitOrder()" class="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-700">Enviar Pedido</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección 3: Vista Consolidada -->
         <div id="view-consolidated" class="hidden">
           <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
             <table class="w-full text-left text-xs text-gray-600" id="consolidated-table">
-              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]" id="consolidated-thead">
-                <!-- Se poblará dinámicamente -->
-              </thead>
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]" id="consolidated-thead"></thead>
               <tbody id="consolidated-tbody">
                 <tr><td class="p-3 text-center text-gray-500">Cargando matriz de stock...</td></tr>
               </tbody>
@@ -201,6 +257,8 @@
     let currentUser = null;
     let currentUserRole = 'VIGILADOR';
     let currentAuditData = [];
+    let globalProducts = [];
+    let globalPrices = {};
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -271,6 +329,7 @@
       await loadCatalog();
       loadStockAndPrices();
       loadAuditLog();
+      loadOrders();
     }
 
     async function loadBranches() {
@@ -285,27 +344,43 @@
       const selectIngress = document.getElementById('ingress-product-select');
       const { data, error } = await supabaseClient.from('productos').select('id, name').order('name');
       if (!error && data) {
+        globalProducts = data;
         selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>' + 
           data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      }
+
+      const { data: pricesData } = await supabaseClient.from('precios_insumos').select('product_id, estimated_unit_price');
+      if (pricesData) {
+        pricesData.forEach(p => { globalPrices[p.product_id] = p.estimated_unit_price; });
       }
     }
 
     function switchView(view) {
       const opDiv = document.getElementById('view-operational');
+      const ordersDiv = document.getElementById('view-orders');
       const consDiv = document.getElementById('view-consolidated');
       const opBtn = document.getElementById('view-op-btn');
+      const ordersBtn = document.getElementById('view-orders-btn');
       const consBtn = document.getElementById('view-cons-btn');
+
+      opDiv.classList.add('hidden');
+      ordersDiv.classList.add('hidden');
+      consDiv.classList.add('hidden');
+
+      opBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      ordersBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      consBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
 
       if (view === 'operational') {
         opDiv.classList.remove('hidden');
-        consDiv.classList.add('hidden');
         opBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
-        consBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      } else if (view === 'orders') {
+        ordersDiv.classList.remove('hidden');
+        ordersBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
+        loadOrders();
       } else {
-        opDiv.classList.add('hidden');
         consDiv.classList.remove('hidden');
         consBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
-        opBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
         loadConsolidatedMatrix();
       }
     }
@@ -348,17 +423,7 @@
         return;
       }
 
-      let pricesMap = {};
-      let canSeePrices = false;
-
-      if (currentUserRole !== 'VIGILADOR') {
-        const { data: pricesData, error: pricesErr } = await supabaseClient.from('precios_insumos').select('product_id, estimated_unit_price');
-        if (!pricesErr && pricesData) {
-          canSeePrices = true;
-          pricesData.forEach(p => { pricesMap[p.product_id] = p.estimated_unit_price; });
-        }
-      }
-
+      let canSeePrices = currentUserRole !== 'VIGILADOR';
       selectConsume.innerHTML = '<option value="">Seleccione insumo...</option>';
       let grandTotalCost = 0;
 
@@ -378,7 +443,7 @@
 
           let priceHtml = '';
           if (canSeePrices) {
-            const unitPrice = pricesMap[item.product_id] || 0;
+            const unitPrice = globalPrices[item.product_id] || 0;
             const totalItemCost = unitPrice * item.qty;
             grandTotalCost += totalItemCost;
             priceHtml = `
@@ -453,6 +518,153 @@
       }).join('');
     }
 
+    async function loadOrders() {
+      const buildingId = document.getElementById('branch-select').value;
+      if (!buildingId) return;
+
+      const tbody = document.getElementById('orders-table-body');
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-red-600 text-center">Error al cargar pedidos: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-gray-500 text-center">No hay pedidos generados para esta sucursal.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(o => {
+        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">${o.status}</span>`;
+        if (o.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">APROBADO</span>`;
+
+        let actionBtn = '';
+        if (currentUserRole !== 'VIGILADOR' && o.status === 'PENDIENTE') {
+          actionBtn = `<button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Aprobar</button>`;
+        }
+
+        return `
+          <tr class="border-b hover:bg-gray-100">
+            <td class="p-2.5 font-bold">#${o.id}</td>
+            <td class="p-2.5 font-mono">${o.periodo}</td>
+            <td class="p-2.5 uppercase">${o.building_id}</td>
+            <td class="p-2.5">${statusBadge}</td>
+            <td class="p-2.5 font-bold text-emerald-700">$${parseFloat(o.total_estimated_cost || 0).toFixed(2)}</td>
+            <td class="p-2.5 text-gray-500">${o.created_by}</td>
+            <td class="p-2.5">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openNewOrderModal() {
+      const panel = document.getElementById('order-form-panel');
+      const itemsList = document.getElementById('order-items-list');
+      panel.classList.remove('hidden');
+
+      // Fecha por defecto AAA-MM
+      const today = new Date();
+      document.getElementById('order-period').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+      itemsList.innerHTML = globalProducts.map(p => {
+        const uPrice = globalPrices[p.id] || 0;
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded border text-xs">
+            <span class="font-semibold w-1/3">${p.name} ($${uPrice.toFixed(2)}/u)</span>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] text-gray-500">Cantidad:</label>
+              <input type="number" id="order-qty-${p.id}" min="0" value="0" onchange="calculateOrderTotal()" class="w-20 p-1 border rounded text-xs text-center">
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      calculateOrderTotal();
+    }
+
+    function closeNewOrderModal() {
+      document.getElementById('order-form-panel').classList.add('hidden');
+    }
+
+    function calculateOrderTotal() {
+      let grandTotal = 0;
+      globalProducts.forEach(p => {
+        const input = document.getElementById(`order-qty-${p.id}`);
+        if (input) {
+          const qty = parseInt(input.value) || 0;
+          const uPrice = globalPrices[p.id] || 0;
+          grandTotal += (qty * uPrice);
+        }
+      });
+      document.getElementById('order-total-cost').textContent = `$${grandTotal.toFixed(2)}`;
+    }
+
+    async function submitOrder() {
+      const buildingId = document.getElementById('branch-select').value;
+      const periodo = document.getElementById('order-period').value;
+      const notes = document.getElementById('order-notes').value;
+
+      if (!periodo) return alert('Por favor selecciona el período.');
+
+      let totalCost = 0;
+      let itemsToInsert = [];
+
+      globalProducts.forEach(p => {
+        const input = document.getElementById(`order-qty-${p.id}`);
+        const qty = parseInt(input?.value) || 0;
+        if (qty > 0) {
+          const uPrice = globalPrices[p.id] || 0;
+          const subtotal = qty * uPrice;
+          totalCost += subtotal;
+          itemsToInsert.push({ product_id: p.id, qty_requested: qty, unit_price: uPrice, subtotal });
+        }
+      });
+
+      if (itemsToInsert.length === 0) return alert('Debes solicitar al menos 1 producto.');
+
+      // Crear Cabecera del Pedido
+      const { data: orderData, error: orderErr } = await supabaseClient
+        .from('pedidos')
+        .insert([{
+          building_id: buildingId,
+          periodo: periodo,
+          status: 'PENDIENTE',
+          created_by: currentUser.email,
+          total_estimated_cost: totalCost,
+          notes: notes
+        }])
+        .select()
+        .single();
+
+      if (orderErr) return alert(`Error al crear pedido: ${orderErr.message}`);
+
+      // Insertar Detalles
+      const detailsWithId = itemsToInsert.map(item => ({ ...item, pedido_id: orderData.id }));
+      await supabaseClient.from('pedidos_detalle').insert(detailsWithId);
+
+      alert('Pedido mensual enviado exitosamente para aprobación.');
+      closeNewOrderModal();
+      loadOrders();
+    }
+
+    async function approveOrder(orderId) {
+      const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ status: 'APROBADO', approved_by: currentUser.email, updated_at: new Date() })
+        .eq('id', orderId);
+
+      if (error) alert(`Error al aprobar: ${error.message}`);
+      else {
+        alert('Pedido aprobado con éxito.');
+        loadOrders();
+      }
+    }
+
     function exportAuditCSV() {
       if (!currentAuditData || currentAuditData.length === 0) {
         return alert('No hay datos de auditoría para exportar.');
@@ -492,14 +704,12 @@
         return;
       }
 
-      // Mapa de stock rápido [product_id][building_id]
       let stockMap = {};
       stockData.forEach(s => {
         if (!stockMap[s.product_id]) stockMap[s.product_id] = {};
         stockMap[s.product_id][s.building_id] = s.qty;
       });
 
-      // Render Encabezados
       thead.innerHTML = `
         <tr>
           <th class="p-2.5 border">Producto</th>
@@ -507,7 +717,6 @@
         </tr>
       `;
 
-      // Render Filas por Producto
       tbody.innerHTML = productos.map(p => {
         return `
           <tr class="border-b hover:bg-gray-100">
