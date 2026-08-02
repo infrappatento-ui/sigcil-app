@@ -66,98 +66,127 @@
           <button onclick="logout()" class="text-xs text-red-600 underline ml-4">Cerrar Sesión</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <!-- Columna Izquierda: Listado de Stock -->
-          <div class="md:col-span-2">
-            <div class="flex justify-between items-center mb-3">
-              <h2 class="text-lg font-bold" id="depot-title">Stock Actual</h2>
-              <div id="total-cost-container" class="hidden text-right">
-                <span class="text-xs text-gray-500 block">Valorizado Total:</span>
-                <span id="total-cost-val" class="text-sm font-extrabold text-emerald-700">$0.00</span>
+        <!-- Pestañas de Vista (Operativa vs Consolidado) -->
+        <div class="flex border-b mb-6 text-xs font-bold" id="view-tabs">
+          <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-4 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
+          <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada (Coordinación)</button>
+        </div>
+
+        <!-- Seccion Vista Operativa -->
+        <div id="view-operational">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Columna Izquierda: Listado de Stock -->
+            <div class="md:col-span-2">
+              <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-bold" id="depot-title">Stock Actual</h2>
+                <div id="total-cost-container" class="hidden text-right">
+                  <span class="text-xs text-gray-500 block">Valorizado Total:</span>
+                  <span id="total-cost-val" class="text-sm font-extrabold text-emerald-700">$0.00</span>
+                </div>
+              </div>
+              
+              <div id="stock-list" class="space-y-2">
+                <p class="text-xs text-gray-500">Cargando datos en tiempo real...</p>
               </div>
             </div>
-            
-            <div id="stock-list" class="space-y-2">
-              <p class="text-xs text-gray-500">Cargando datos en tiempo real...</p>
+
+            <!-- Columna Derecha: Panel Operativo (Consumo e Ingreso) -->
+            <div class="bg-gray-50 p-4 rounded border h-fit">
+              <div class="flex border-b mb-3 text-xs font-bold">
+                <button id="tab-consume-btn" onclick="switchTab('consume')" class="pb-2 px-3 border-b-2 border-emerald-600 text-emerald-700 w-1/2 text-center">Consumo</button>
+                <button id="tab-ingress-btn" onclick="switchTab('ingress')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 w-1/2 text-center">Ingreso / Compra</button>
+              </div>
+
+              <!-- Formulario Consumo (RN-001) -->
+              <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Producto</label>
+                  <select id="product-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                    <option value="">Seleccione insumo...</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Cantidad a retirar</label>
+                  <input type="number" id="qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 5">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Informado por (Retira)</label>
+                  <input type="text" id="informed-input" class="w-full p-2 border rounded text-xs" required placeholder="Nombre del personal">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
+                  <input type="text" id="note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
+                </div>
+                <button type="submit" id="btn-submit-consume" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
+              </form>
+
+              <!-- Formulario Ingreso (RN-002) -->
+              <form id="ingress-form" onsubmit="handleIngress(event)" class="space-y-3 hidden">
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Producto (Catálogo General)</label>
+                  <select id="ingress-product-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                    <option value="">Seleccione insumo...</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Cantidad recibida</label>
+                  <input type="number" id="ingress-qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 50">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Proveedor / Remito</label>
+                  <input type="text" id="supplier-input" class="w-full p-2 border rounded text-xs" required placeholder="Ej: Distribuidora Norte - Remito #1042">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
+                  <input type="text" id="ingress-note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
+                </div>
+                <button type="submit" id="btn-submit-ingress" class="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-700">Registrar Ingreso</button>
+              </form>
+
+              <div id="form-msg" class="mt-3 text-xs p-2 rounded hidden"></div>
             </div>
           </div>
 
-          <!-- Columna Derecha: Panel Operativo (Consumo e Ingreso) -->
-          <div class="bg-gray-50 p-4 rounded border h-fit">
-            <div class="flex border-b mb-3 text-xs font-bold">
-              <button id="tab-consume-btn" onclick="switchTab('consume')" class="pb-2 px-3 border-b-2 border-emerald-600 text-emerald-700 w-1/2 text-center">Consumo</button>
-              <button id="tab-ingress-btn" onclick="switchTab('ingress')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 w-1/2 text-center">Ingreso / Compra</button>
+          <!-- Módulo de Auditoría y Trazabilidad (RN-002) -->
+          <div class="border-t pt-6">
+            <div class="flex justify-between items-center mb-3">
+              <h2 class="text-lg font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
+              <button onclick="exportAuditCSV()" class="bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-800 flex items-center gap-1">
+                📥 Exportar CSV
+              </button>
             </div>
-
-            <!-- Formulario Consumo (RN-001) -->
-            <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Producto</label>
-                <select id="product-select" class="w-full p-2 border rounded text-xs bg-white" required>
-                  <option value="">Seleccione insumo...</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Cantidad a retirar</label>
-                <input type="number" id="qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 5">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Informado por (Retira)</label>
-                <input type="text" id="informed-input" class="w-full p-2 border rounded text-xs" required placeholder="Nombre del personal">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
-                <input type="text" id="note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
-              </div>
-              <button type="submit" id="btn-submit-consume" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
-            </form>
-
-            <!-- Formulario Ingreso (RN-002) -->
-            <form id="ingress-form" onsubmit="handleIngress(event)" class="space-y-3 hidden">
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Producto (Catálogo General)</label>
-                <select id="ingress-product-select" class="w-full p-2 border rounded text-xs bg-white" required>
-                  <option value="">Seleccione insumo...</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Cantidad recibida</label>
-                <input type="number" id="ingress-qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 50">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Proveedor / Remito</label>
-                <input type="text" id="supplier-input" class="w-full p-2 border rounded text-xs" required placeholder="Ej: Distribuidora Norte - Remito #1042">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
-                <input type="text" id="ingress-note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
-              </div>
-              <button type="submit" id="btn-submit-ingress" class="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-700">Registrar Ingreso</button>
-            </form>
-
-            <div id="form-msg" class="mt-3 text-xs p-2 rounded hidden"></div>
+            <div class="overflow-x-auto bg-gray-50 rounded border">
+              <table class="w-full text-left text-xs text-gray-600">
+                <thead class="bg-gray-200 text-gray-700 uppercase text-[10px]">
+                  <tr>
+                    <th class="p-2.5">Fecha</th>
+                    <th class="p-2.5">Acción</th>
+                    <th class="p-2.5">Producto</th>
+                    <th class="p-2.5">Cantidad</th>
+                    <th class="p-2.5">Usuario</th>
+                    <th class="p-2.5">Detalle / Proveedor</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-body">
+                  <tr>
+                    <td colspan="6" class="p-3 text-center text-gray-500">Cargando registros de auditoría...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- Módulo de Auditoría y Trazabilidad (RN-002) -->
-        <div class="border-t pt-6">
-          <h2 class="text-lg font-bold mb-3 text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
+        <!-- Seccion Vista Consolidada -->
+        <div id="view-consolidated" class="hidden">
+          <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
-            <table class="w-full text-left text-xs text-gray-600">
-              <thead class="bg-gray-200 text-gray-700 uppercase text-[10px]">
-                <tr>
-                  <th class="p-2.5">Fecha</th>
-                  <th class="p-2.5">Acción</th>
-                  <th class="p-2.5">Producto</th>
-                  <th class="p-2.5">Cantidad</th>
-                  <th class="p-2.5">Usuario</th>
-                  <th class="p-2.5">Detalle / Proveedor</th>
-                </tr>
+            <table class="w-full text-left text-xs text-gray-600" id="consolidated-table">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]" id="consolidated-thead">
+                <!-- Se poblará dinámicamente -->
               </thead>
-              <tbody id="audit-table-body">
-                <tr>
-                  <td colspan="6" class="p-3 text-center text-gray-500">Cargando registros de auditoría...</td>
-                </tr>
+              <tbody id="consolidated-tbody">
+                <tr><td class="p-3 text-center text-gray-500">Cargando matriz de stock...</td></tr>
               </tbody>
             </table>
           </div>
@@ -171,6 +200,7 @@
     let supabaseClient = null;
     let currentUser = null;
     let currentUserRole = 'VIGILADOR';
+    let currentAuditData = [];
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -233,6 +263,10 @@
         ? 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 uppercase'
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
+      if (currentUserRole !== 'VIGILADOR') {
+        document.getElementById('view-cons-btn').classList.remove('hidden');
+      }
+
       await loadBranches();
       await loadCatalog();
       loadStockAndPrices();
@@ -253,6 +287,26 @@
       if (!error && data) {
         selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>' + 
           data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      }
+    }
+
+    function switchView(view) {
+      const opDiv = document.getElementById('view-operational');
+      const consDiv = document.getElementById('view-consolidated');
+      const opBtn = document.getElementById('view-op-btn');
+      const consBtn = document.getElementById('view-cons-btn');
+
+      if (view === 'operational') {
+        opDiv.classList.remove('hidden');
+        consDiv.classList.add('hidden');
+        opBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
+        consBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      } else {
+        opDiv.classList.add('hidden');
+        consDiv.classList.remove('hidden');
+        consBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
+        opBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+        loadConsolidatedMatrix();
       }
     }
 
@@ -366,19 +420,21 @@
         .select('*')
         .eq('building_id', buildingId)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-red-600 text-center">Error al cargar auditoría: ${error.message}</td></tr>`;
         return;
       }
 
-      if (!data || data.length === 0) {
+      currentAuditData = data || [];
+
+      if (currentAuditData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-gray-500 text-center">No hay movimientos registrados para esta sucursal.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = data.map(row => {
+      tbody.innerHTML = currentAuditData.map(row => {
         const dateFormatted = new Date(row.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
         const actionBadge = row.action === 'INGRESO'
           ? `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">INGRESO</span>`
@@ -392,6 +448,77 @@
             <td class="p-2.5 font-bold">${row.qty_changed} u</td>
             <td class="p-2.5 text-gray-500">${row.registered_by || '-'}</td>
             <td class="p-2.5 text-gray-500">${row.note || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportAuditCSV() {
+      if (!currentAuditData || currentAuditData.length === 0) {
+        return alert('No hay datos de auditoría para exportar.');
+      }
+
+      const headers = ['Fecha', 'Acción', 'Producto', 'Cantidad', 'Usuario', 'Nota / Detalle'];
+      const rows = currentAuditData.map(r => [
+        `"${new Date(r.created_at).toISOString()}"`,
+        `"${r.action}"`,
+        `"${r.product_id}"`,
+        r.qty_changed,
+        `"${r.registered_by}"`,
+        `"${(r.note || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      const buildingId = document.getElementById('branch-select').value;
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `auditoria_sigcil_${buildingId}_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function loadConsolidatedMatrix() {
+      const thead = document.getElementById('consolidated-thead');
+      const tbody = document.getElementById('consolidated-tbody');
+
+      const { data: sucursales } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true).order('name');
+      const { data: productos } = await supabaseClient.from('productos').select('id, name').order('name');
+      const { data: stockData } = await supabaseClient.from('stock').select('building_id, product_id, qty');
+
+      if (!sucursales || !productos || !stockData) {
+        tbody.innerHTML = '<tr><td class="p-3 text-red-600 text-center">Error al cargar la matriz consolidada.</td></tr>';
+        return;
+      }
+
+      // Mapa de stock rápido [product_id][building_id]
+      let stockMap = {};
+      stockData.forEach(s => {
+        if (!stockMap[s.product_id]) stockMap[s.product_id] = {};
+        stockMap[s.product_id][s.building_id] = s.qty;
+      });
+
+      // Render Encabezados
+      thead.innerHTML = `
+        <tr>
+          <th class="p-2.5 border">Producto</th>
+          ${sucursales.map(s => `<th class="p-2.5 border text-center">[${s.country}] ${s.name}</th>`).join('')}
+        </tr>
+      `;
+
+      // Render Filas por Producto
+      tbody.innerHTML = productos.map(p => {
+        return `
+          <tr class="border-b hover:bg-gray-100">
+            <td class="p-2.5 font-semibold capitalize border">${p.name}</td>
+            ${sucursales.map(s => {
+              const qty = stockMap[p.id]?.[s.id] ?? 0;
+              let bg = 'bg-slate-50';
+              if (qty > 0 && qty <= 10) bg = 'bg-red-50 text-red-700 font-bold';
+              else if (qty >= 200) bg = 'bg-amber-50 text-amber-800 font-bold';
+              return `<td class="p-2.5 text-center border ${bg}">${qty} u</td>`;
+            }).join('')}
           </tr>
         `;
       }).join('');
