@@ -395,20 +395,21 @@
       }
     }
 
-    async function loadCatalog() {
-      const selectIngress = document.getElementById('ingress-product-select');
-      const { data, error } = await supabaseClient.from('productos').select('id, name').order('name');
-      if (!error && data) {
-        globalProducts = data;
-        selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>' + 
-          data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      }
+async function toggleUserStatus(userId, currentIsActive) {
+  const newStatus = !currentIsActive;
+  
+  const { data, error } = await supabaseClient.rpc('toggle_user_status', {
+    p_user_id: userId,
+    p_is_active: newStatus
+  });
 
-      const { data: pricesData } = await supabaseClient.from('precios_insumos').select('product_id, estimated_unit_price');
-      if (pricesData) {
-        pricesData.forEach(p => { globalPrices[p.product_id] = p.estimated_unit_price; });
-      }
-    }
+  if (error) {
+    alert(`Error al actualizar estado: ${error.message}`);
+  } else {
+    alert(newStatus ? 'Usuario reactivado correctamente.' : 'Usuario inactivado correctamente (RN-004).');
+    loadUsersList();
+  }
+}
 
     function switchView(view) {
       const opDiv = document.getElementById('view-operational');
