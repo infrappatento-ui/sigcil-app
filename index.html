@@ -115,7 +115,7 @@
             <!-- Formulario Ingreso (RN-002) -->
             <form id="ingress-form" onsubmit="handleIngress(event)" class="space-y-3 hidden">
               <div>
-                <label class="block text-xs font-bold text-gray-700">Producto</label>
+                <label class="block text-xs font-bold text-gray-700">Producto (Catálogo General)</label>
                 <select id="ingress-product-select" class="w-full p-2 border rounded text-xs bg-white" required>
                   <option value="">Seleccione insumo...</option>
                 </select>
@@ -209,6 +209,7 @@
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
       await loadBranches();
+      await loadCatalog(); // Cargar catálogo global de productos
       loadStockAndPrices();
     }
 
@@ -217,6 +218,16 @@
       const { data, error } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true).order('name');
       if (!error && data) {
         select.innerHTML = data.map(b => `<option value="${b.id}">[${b.country}] ${b.name}</option>`).join('');
+      }
+    }
+
+    // Carga del catálogo completo de productos para la recepción de stock
+    async function loadCatalog() {
+      const selectIngress = document.getElementById('ingress-product-select');
+      const { data, error } = await supabaseClient.from('productos').select('id, name').order('name');
+      if (!error && data) {
+        selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>' + 
+          data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
       }
     }
 
@@ -250,7 +261,6 @@
       const { data: stockData, error: stockErr } = await supabaseClient.from('stock').select('product_id, qty').eq('building_id', buildingId);
       const container = document.getElementById('stock-list');
       const selectConsume = document.getElementById('product-select');
-      const selectIngress = document.getElementById('ingress-product-select');
       const costContainer = document.getElementById('total-cost-container');
       const totalVal = document.getElementById('total-cost-val');
 
@@ -271,7 +281,6 @@
       }
 
       selectConsume.innerHTML = '<option value="">Seleccione insumo...</option>';
-      selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>';
       let grandTotalCost = 0;
 
       if (!stockData || stockData.length === 0) {
@@ -280,7 +289,6 @@
         container.innerHTML = stockData.map(item => {
           const nameFormatted = item.product_id.replace(/-/g, ' ');
           selectConsume.innerHTML += `<option value="${item.product_id}">${nameFormatted} (Disponible: ${item.qty})</option>`;
-          selectIngress.innerHTML += `<option value="${item.product_id}">${nameFormatted}</option>`;
           
           let priceHtml = '';
           if (canSeePrices) {
