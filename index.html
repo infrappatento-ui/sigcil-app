@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGCIL - Control de Insumos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+  <div id="app" class="p-6 max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h1 class="text-2xl font-bold text-slate-800 mb-2">SIGCIL</h1>
+      <p class="text-sm text-gray-600 mb-6">Sistema Integral de Gestión y Control de Insumos de Limpieza</p>
+
+      <!-- Configuración de Conexión -->
+      <div id="config-panel" class="mb-6 p-4 bg-amber-50 rounded border border-amber-200">
+        <h2 class="text-md font-semibold text-amber-800 mb-2">Conexión a Supabase Real</h2>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700">Project URL:</label>
+            <input type="text" id="supabase-url" class="w-full text-xs p-2 border rounded" placeholder="https://drcsvtgrtxpiek...supabase.co">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700">Anon Key:</label>
+            <input type="password" id="supabase-key" class="w-full text-xs p-2 border rounded" placeholder="eyJh...">
+          </div>
+          <button onclick="saveConfig()" class="bg-amber-600 text-white text-xs px-4 py-2 rounded font-semibold hover:bg-amber-700">Guardar y Conectar</button>
+        </div>
+      </div>
+
+      <!-- Pantalla de Login -->
+      <div id="auth-panel" class="hidden">
+        <h2 class="text-lg font-bold mb-4">Acceso al Sistema</h2>
+        <div class="space-y-4 max-w-sm">
+          <div>
+            <label class="block text-xs font-bold">Correo electrónico</label>
+            <input type="email" id="email" class="w-full p-2 border rounded text-sm" placeholder="usuario@empresa.com">
+          </div>
+          <div>
+            <label class="block text-xs font-bold">Contraseña</label>
+            <input type="password" id="password" class="w-full p-2 border rounded text-sm" placeholder="••••••••">
+          </div>
+          <button onclick="login()" class="w-full bg-slate-800 text-white py-2 rounded font-semibold hover:bg-slate-700">Ingresar</button>
+        </div>
+        <div id="auth-error" class="mt-3 text-red-600 text-xs hidden"></div>
+      </div>
+
+      <!-- Panel Principal -->
+      <div id="main-panel" class="hidden">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+          <div>
+            <p class="text-xs text-gray-500">Usuario activo:</p>
+            <p id="user-email" class="font-bold text-sm"></p>
+          </div>
+          <button onclick="logout()" class="text-xs text-red-600 underline">Cerrar Sesión</button>
+        </div>
+
+        <h2 class="text-lg font-bold mb-3">Depósito: Salta 2</h2>
+        <div id="stock-list" class="space-y-2 mb-6">
+          <p class="text-xs text-gray-500">Cargando stock en tiempo real...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let supabaseClient = null;
+
+    function saveConfig() {
+      const url = document.getElementById('supabase-url').value.trim();
+      const key = document.getElementById('supabase-key').value.trim();
+      if (!url || !key) return alert('Por favor ingresa URL y Anon Key de Supabase.');
+      localStorage.setItem('sb_url', url);
+      localStorage.setItem('sb_key', key);
+      initSupabase();
+    }
+
+    function initSupabase() {
+      const url = localStorage.getItem('sb_url');
+      const key = localStorage.getItem('sb_key');
+      if (url && key) {
+        supabaseClient = window.supabase.createClient(url, key);
+        document.getElementById('config-panel').classList.add('hidden');
+        document.getElementById('auth-panel').classList.remove('hidden');
+        checkSession();
+      }
+    }
+
+    async function checkSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        showMain(session.user);
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errDiv = document.getElementById('auth-error');
+      errDiv.classList.add('hidden');
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        errDiv.textContent = error.message;
+        errDiv.classList.remove('hidden');
+      } else {
+        showMain(data.user);
+      }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      document.getElementById('main-panel').classList.add('hidden');
+      document.getElementById('auth-panel').classList.remove('hidden');
+    }
+
+    async function showMain(user) {
+      document.getElementById('auth-panel').classList.add('hidden');
+      document.getElementById('main-panel').classList.remove('hidden');
+      document.getElementById('user-email').textContent = user.email;
+      loadStock();
+    }
+
+    async function loadStock() {
+      const { data, error } = await supabaseClient.from('stock').select('product_id, qty');
+      const container = document.getElementById('stock-list');
+      if (error) {
+        container.innerHTML = `<p class="text-red-600 text-xs">Error al cargar stock: ${error.message}</p>`;
+        return;
+      }
+      container.innerHTML = data.map(item => `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded border text-sm">
+          <span class="font-medium capitalize">${item.product_id.replace('-', ' ')}</span>
+          <span class="font-bold bg-slate-200 px-3 py-1 rounded text-xs">${item.qty} u</span>
+        </div>
+      `).join('');
+    }
+
+    // Carga inicial
+    const savedUrl = localStorage.getItem('sb_url');
+    if (savedUrl) {
+      document.getElementById('supabase-url').value = savedUrl;
+      document.getElementById('supabase-key').value = localStorage.getItem('sb_key');
+      initSupabase();
+    }
+  </script>
+</body>
+</html>
