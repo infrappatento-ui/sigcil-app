@@ -66,11 +66,12 @@
           <button onclick="logout()" class="text-xs text-red-600 underline ml-4">Cerrar Sesión</button>
         </div>
 
-        <!-- Pestañas de Navegación -->
-        <div class="flex border-b mb-6 text-xs font-bold" id="view-tabs">
-          <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-4 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
-          <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Pedidos Mensuales</button>
-          <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada (Coordinación)</button>
+        <!-- Pestañas de Navegación del Menú Principal -->
+        <div class="flex border-b mb-6 text-xs font-bold space-x-1" id="view-tabs">
+          <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-3 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
+          <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Pedidos Mensuales</button>
+          <button id="view-users-btn" onclick="switchView('users')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Usuarios (RN-004)</button>
+          <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada</button>
         </div>
 
         <!-- Sección 1: Vista Operativa -->
@@ -175,7 +176,7 @@
           </div>
         </div>
 
-        <!-- Sección 2: Módulo de Pedidos Mensuales (EO-001 / EO-002) -->
+        <!-- Sección 2: Módulo de Pedidos Mensuales -->
         <div id="view-orders" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -212,7 +213,7 @@
             </table>
           </div>
 
-          <!-- Formulario Nuevo Pedido (Con Sugerencia de Reposición) -->
+          <!-- Formulario Nuevo Pedido -->
           <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <div>
@@ -234,9 +235,7 @@
             </div>
 
             <h4 class="text-xs font-bold text-gray-700 mb-2">Detalle de Insumos y Sugerencia de Reposición:</h4>
-            <div id="order-items-list" class="space-y-2 mb-4">
-              <!-- Renglones de insumos -->
-            </div>
+            <div id="order-items-list" class="space-y-2 mb-4"></div>
 
             <div class="flex justify-between items-center border-t pt-3">
               <div>
@@ -251,7 +250,34 @@
           </div>
         </div>
 
-        <!-- Sección 3: Vista Consolidada -->
+        <!-- Sección 3: Módulo de Usuarios y Perfiles (RN-004) -->
+        <div id="view-users" class="hidden">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Administración de Usuarios y Perfiles (RN-004)</h2>
+              <p class="text-xs text-gray-500">Gestión de roles y asignación de sucursales. Los usuarios se inactivan, conservando la trazabilidad de sus acciones.</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto bg-gray-50 rounded border">
+            <table class="w-full text-left text-xs text-gray-600">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5">Email / Usuario</th>
+                  <th class="p-2.5">Rol Funcional</th>
+                  <th class="p-2.5">Sucursal Asignada</th>
+                  <th class="p-2.5">Estado</th>
+                  <th class="p-2.5">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="5" class="p-3 text-center text-gray-500">Cargando usuarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sección 4: Vista Consolidada -->
         <div id="view-consolidated" class="hidden">
           <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
@@ -277,6 +303,7 @@
     let globalProducts = [];
     let globalPrices = {};
     let currentBranchStock = {};
+    let globalSucursales = [];
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -356,12 +383,12 @@
       const select = document.getElementById('branch-select');
       const { data, error } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true).order('name');
       if (!error && data) {
+        globalSucursales = data;
         select.innerHTML = data.map(b => `<option value="${b.id}">[${b.country}] ${b.name}</option>`).join('');
 
-        // Regla de Seguridad y Alcance por Rol: Fijar sucursal si es Intendente o Vigilador asignado
         if (userAssignedBuilding && (currentUserRole === 'INTENDENTE' || currentUserRole === 'VIGILADOR')) {
           select.value = userAssignedBuilding;
-          select.disabled = true; // Bloquea la alternancia multidepósito
+          select.disabled = true;
         } else {
           select.disabled = false;
         }
@@ -386,29 +413,38 @@
     function switchView(view) {
       const opDiv = document.getElementById('view-operational');
       const ordersDiv = document.getElementById('view-orders');
+      const usersDiv = document.getElementById('view-users');
       const consDiv = document.getElementById('view-consolidated');
+
       const opBtn = document.getElementById('view-op-btn');
       const ordersBtn = document.getElementById('view-orders-btn');
+      const usersBtn = document.getElementById('view-users-btn');
       const consBtn = document.getElementById('view-cons-btn');
 
       opDiv.classList.add('hidden');
       ordersDiv.classList.add('hidden');
+      usersDiv.classList.add('hidden');
       consDiv.classList.add('hidden');
 
-      opBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      ordersBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      consBtn.className = 'pb-2 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      opBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      ordersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      usersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      consBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
 
       if (view === 'operational') {
         opDiv.classList.remove('hidden');
-        opBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
+        opBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
       } else if (view === 'orders') {
         ordersDiv.classList.remove('hidden');
-        ordersBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
+        ordersBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
         loadOrders();
+      } else if (view === 'users') {
+        usersDiv.classList.remove('hidden');
+        usersBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
+        loadUsersList();
       } else {
         consDiv.classList.remove('hidden');
-        consBtn.className = 'pb-2 px-4 border-b-2 border-slate-800 text-slate-800';
+        consBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
         loadConsolidatedMatrix();
       }
     }
@@ -593,6 +629,54 @@
           </tr>
         `;
       }).join('');
+    }
+
+    async function loadUsersList() {
+      const tbody = document.getElementById('users-table-body');
+      const { data, error } = await supabaseClient.from('vw_usuarios_sistema').select('*').order('email');
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-red-600 text-center">Error al cargar lista de usuarios: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-gray-500 text-center">No hay usuarios registrados en el sistema.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(u => {
+        const activeBadge = u.is_active !== false
+          ? `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVO</span>`
+          : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">INACTIVO</span>`;
+
+        const toggleBtnText = u.is_active !== false ? 'Inactivar (RN-004)' : 'Reactivar';
+        const toggleBtnClass = u.is_active !== false ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700';
+
+        return `
+          <tr class="border-b hover:bg-gray-100">
+            <td class="p-2.5 font-semibold">${u.email}</td>
+            <td class="p-2.5 font-bold text-slate-700">${u.role || 'SIN ROL'}</td>
+            <td class="p-2.5 uppercase font-mono">${u.building_id || 'TODAS (GLOBAL)'}</td>
+            <td class="p-2.5">${activeBadge}</td>
+            <td class="p-2.5">
+              <button onclick="toggleUserStatus('${u.id}', ${u.is_active !== false})" class="text-white px-2 py-1 rounded text-[10px] font-bold ${toggleBtnClass}">
+                ${toggleBtnText}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function toggleUserStatus(userId, currentIsActive) {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ is_active: !currentIsActive, updated_at: new Date() })
+        .eq('id', userId);
+
+      if (error) alert(`Error al actualizar estado: ${error.message}`);
+      else loadUsersList();
     }
 
     function openNewOrderModal() {
