@@ -56,9 +56,41 @@
           <button onclick="logout()" class="text-xs text-red-600 underline">Cerrar Sesión</button>
         </div>
 
-        <h2 class="text-lg font-bold mb-3">Depósito: Salta 2</h2>
-        <div id="stock-list" class="space-y-2 mb-6">
-          <p class="text-xs text-gray-500">Cargando stock en tiempo real...</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Columna Izquierda: Stock -->
+          <div>
+            <h2 class="text-lg font-bold mb-3">Depósito: Salta 2</h2>
+            <div id="stock-list" class="space-y-2">
+              <p class="text-xs text-gray-500">Cargando stock en tiempo real...</p>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Registrar Consumo (RN-001) -->
+          <div class="bg-gray-50 p-4 rounded border">
+            <h2 class="text-md font-bold text-slate-800 mb-3">Registrar Consumo</h2>
+            <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Producto</label>
+                <select id="product-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <option value="">Seleccione insumo...</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Cantidad a retirar</label>
+                <input type="number" id="qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 5">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Informado por (Retira)</label>
+                <input type="text" id="informed-input" class="w-full p-2 border rounded text-xs" required placeholder="Nombre del personal">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
+                <input type="text" id="note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
+              </div>
+              <button type="submit" id="btn-submit" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
+            </form>
+            <div id="form-msg" class="mt-3 text-xs p-2 rounded hidden"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -66,6 +98,7 @@
 
   <script>
     let supabaseClient = null;
+    let currentUser = null;
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -116,6 +149,7 @@
     }
 
     async function showMain(user) {
+      currentUser = user;
       document.getElementById('auth-panel').classList.add('hidden');
       document.getElementById('main-panel').classList.remove('hidden');
       document.getElementById('user-email').textContent = user.email;
@@ -125,16 +159,61 @@
     async function loadStock() {
       const { data, error } = await supabaseClient.from('stock').select('product_id, qty');
       const container = document.getElementById('stock-list');
+      const select = document.getElementById('product-select');
+      
       if (error) {
         container.innerHTML = `<p class="text-red-600 text-xs">Error al cargar stock: ${error.message}</p>`;
         return;
       }
-      container.innerHTML = data.map(item => `
-        <div class="flex justify-between items-center p-3 bg-gray-50 rounded border text-sm">
-          <span class="font-medium capitalize">${item.product_id.replace('-', ' ')}</span>
-          <span class="font-bold bg-slate-200 px-3 py-1 rounded text-xs">${item.qty} u</span>
-        </div>
-      `).join('');
+
+      select.innerHTML = '<option value="">Seleccione insumo...</option>';
+
+      container.innerHTML = data.map(item => {
+        const nameFormatted = item.product_id.replace(/-/g, ' ');
+        select.innerHTML += `<option value="${item.product_id}">${nameFormatted} (Disponible: ${item.qty})</option>`;
+        return `
+          <div class="flex justify-between items-center p-3 bg-gray-50 rounded border text-sm">
+            <span class="font-medium capitalize">${nameFormatted}</span>
+            <span class="font-bold bg-slate-200 px-3 py-1 rounded text-xs">${item.qty} u</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleConsume(e) {
+      e.preventDefault();
+      const msgDiv = document.getElementById('form-msg');
+      const btn = document.getElementById('btn-submit');
+      msgDiv.classList.add('hidden');
+      btn.disabled = true;
+
+      const productId = document.getElementById('product-select').value;
+      const qty = parseInt(document.getElementById('qty-input').value);
+      const informedBy = document.getElementById('informed-input').value;
+      const note = document.getElementById('note-input').value;
+
+      // Llamada RPC atómica a la base de datos (RN-001)
+      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
+        p_building_id: 'salta-2',
+        p_product_id: productId,
+        p_qty: qty,
+        p_informed_by: informedBy,
+        p_registered_by: currentUser.email,
+        p_note: note
+      });
+
+      if (error) {
+        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
+        msgDiv.textContent = `Error: ${error.message}`;
+        msgDiv.classList.remove('hidden');
+      } else {
+        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
+        msgDiv.textContent = 'Consumo registrado exitosamente.';
+        msgDiv.classList.remove('hidden');
+        document.getElementById('consumption-form').reset();
+        loadStock(); // Actualización en tiempo real
+      }
+      btn.disabled = false;
     }
 
     // Carga inicial
