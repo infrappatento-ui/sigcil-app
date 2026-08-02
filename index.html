@@ -58,7 +58,7 @@
           <!-- Selector Multidepósito Dinámico -->
           <div class="text-right">
             <label class="block text-xs font-bold text-gray-600 mb-1">Sucursal / Depósito:</label>
-            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders();" class="p-2 border rounded text-xs bg-slate-50 font-semibold">
+            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders();" class="p-2 border rounded text-xs bg-slate-50 font-semibold disabled:bg-gray-200 disabled:text-gray-600">
               <option value="">Cargando sucursales...</option>
             </select>
           </div>
@@ -186,7 +186,7 @@
               <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800 hidden">
                 📦 Consolidar Pedidos Argentina (RN-011)
               </button>
-              <button onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">
+              <button id="btn-create-order" onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">
                 + Confeccionar Pedido Mensual (Intendente)
               </button>
             </div>
@@ -272,6 +272,7 @@
     let supabaseClient = null;
     let currentUser = null;
     let currentUserRole = 'VIGILADOR';
+    let userAssignedBuilding = null;
     let currentAuditData = [];
     let globalProducts = [];
     let globalPrices = {};
@@ -329,16 +330,17 @@
       document.getElementById('main-panel').classList.remove('hidden');
       document.getElementById('user-email').textContent = user.email;
 
-      const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+      const { data: profile } = await supabaseClient.from('profiles').select('role, building_id').eq('id', user.id).single();
       currentUserRole = profile ? profile.role : 'VIGILADOR';
+      userAssignedBuilding = profile ? profile.building_id : null;
       
       const badge = document.getElementById('user-role-badge');
       badge.textContent = `Rol: ${currentUserRole}`;
-      badge.className = currentUserRole === 'VIGILADOR' 
+      badge.className = (currentUserRole === 'VIGILADOR' || currentUserRole === 'INTENDENTE') 
         ? 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 uppercase'
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
-      if (currentUserRole !== 'VIGILADOR') {
+      if (currentUserRole !== 'VIGILADOR' && currentUserRole !== 'INTENDENTE') {
         document.getElementById('view-cons-btn').classList.remove('hidden');
         document.getElementById('btn-consolidate-ar').classList.remove('hidden');
       }
@@ -355,6 +357,14 @@
       const { data, error } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true).order('name');
       if (!error && data) {
         select.innerHTML = data.map(b => `<option value="${b.id}">[${b.country}] ${b.name}</option>`).join('');
+
+        // Regla de Seguridad y Alcance por Rol: Fijar sucursal si es Intendente o Vigilador asignado
+        if (userAssignedBuilding && (currentUserRole === 'INTENDENTE' || currentUserRole === 'VIGILADOR')) {
+          select.value = userAssignedBuilding;
+          select.disabled = true; // Bloquea la alternancia multidepósito
+        } else {
+          select.disabled = false;
+        }
       }
     }
 
@@ -566,7 +576,7 @@
         else if (o.status === 'CONSOLIDADO') statusBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">CONSOLIDADO</span>`;
 
         let actionBtn = '-';
-        if (currentUserRole !== 'VIGILADOR' && o.status === 'PENDIENTE') {
+        if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && o.status === 'PENDIENTE') {
           actionBtn = `<button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar y Derivar</button>`;
         }
 
@@ -596,7 +606,6 @@
       itemsList.innerHTML = globalProducts.map(p => {
         const uPrice = globalPrices[p.id] || 0;
         const currentQty = currentBranchStock[p.id] || 0;
-        // Sugerencia de Reposición Objetivo = 100 unidades base
         const suggestedQty = Math.max(0, 100 - currentQty);
 
         return `
