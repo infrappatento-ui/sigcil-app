@@ -178,10 +178,18 @@
         <!-- Sección 2: Módulo de Pedidos Mensuales (EO-001 / EO-002) -->
         <div id="view-orders" class="hidden">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
-            <button onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">
-              + Nuevo Pedido Mensual
-            </button>
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
+              <p class="text-xs text-gray-500">Supervisión y flujo de aprobación de la reposición periódica de insumos.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800 hidden">
+                📦 Consolidar Pedidos Argentina (RN-011)
+              </button>
+              <button onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">
+                + Confeccionar Pedido Mensual (Intendente)
+              </button>
+            </div>
           </div>
 
           <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
@@ -193,43 +201,51 @@
                   <th class="p-2.5">Sucursal</th>
                   <th class="p-2.5">Estado</th>
                   <th class="p-2.5">Costo Estimado</th>
-                  <th class="p-2.5">Creado Por</th>
-                  <th class="p-2.5">Acciones</th>
+                  <th class="p-2.5">Solicitado Por</th>
+                  <th class="p-2.5">Aprobado / Derivado Por</th>
+                  <th class="p-2.5">Acción de Supervisión</th>
                 </tr>
               </thead>
               <tbody id="orders-table-body">
-                <tr><td colspan="7" class="p-3 text-center text-gray-500">Cargando historial de pedidos...</td></tr>
+                <tr><td colspan="8" class="p-3 text-center text-gray-500">Cargando historial de pedidos...</td></tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Formulario Nuevo Pedido (Modal Integrado) -->
+          <!-- Formulario Nuevo Pedido (Con Sugerencia de Reposición) -->
           <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
-            <h3 class="text-sm font-bold text-slate-800 mb-3 border-b pb-2">Confección de Pedido Mensual</h3>
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <div>
+                <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
+                <p class="text-[11px] text-gray-500">Sugerencia calculada automáticamente según cobertura objetivo (1,5 meses) y stock actual.</p>
+              </div>
+              <span class="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Estado: PENDIENTE DE REVISIÓN</span>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label class="block text-xs font-bold text-gray-700">Período (Año-Mes):</label>
                 <input type="month" id="order-period" class="w-full p-2 border rounded text-xs bg-white" required>
               </div>
               <div>
-                <label class="block text-xs font-bold text-gray-700">Observaciones / Justificación:</label>
-                <input type="text" id="order-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Pedido regular del mes">
+                <label class="block text-xs font-bold text-gray-700">Observaciones / Justificación de la Sucursal:</label>
+                <input type="text" id="order-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Reposición mensual ajustada por evento estacional">
               </div>
             </div>
 
-            <h4 class="text-xs font-bold text-gray-700 mb-2">Detalle de Productos Solicitados:</h4>
+            <h4 class="text-xs font-bold text-gray-700 mb-2">Detalle de Insumos y Sugerencia de Reposición:</h4>
             <div id="order-items-list" class="space-y-2 mb-4">
               <!-- Renglones de insumos -->
             </div>
 
             <div class="flex justify-between items-center border-t pt-3">
               <div>
-                <span class="text-xs text-gray-600 block">Costo Estimado Total:</span>
+                <span class="text-xs text-gray-600 block">Costo Estimado del Pedido:</span>
                 <span id="order-total-cost" class="text-base font-extrabold text-emerald-700">$0.00</span>
               </div>
               <div class="space-x-2">
                 <button onclick="closeNewOrderModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
-                <button onclick="submitOrder()" class="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-700">Enviar Pedido</button>
+                <button onclick="submitOrder()" class="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-700">Enviar a Supervisión / Coordinación</button>
               </div>
             </div>
           </div>
@@ -259,6 +275,7 @@
     let currentAuditData = [];
     let globalProducts = [];
     let globalPrices = {};
+    let currentBranchStock = {};
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -323,6 +340,7 @@
 
       if (currentUserRole !== 'VIGILADOR') {
         document.getElementById('view-cons-btn').classList.remove('hidden');
+        document.getElementById('btn-consolidate-ar').classList.remove('hidden');
       }
 
       await loadBranches();
@@ -418,6 +436,8 @@
       const costContainer = document.getElementById('total-cost-container');
       const totalVal = document.getElementById('total-cost-val');
 
+      currentBranchStock = {};
+
       if (stockErr) {
         container.innerHTML = `<p class="text-red-600 text-xs">Error al cargar stock: ${stockErr.message}</p>`;
         return;
@@ -431,6 +451,7 @@
         container.innerHTML = `<p class="text-gray-500 text-xs p-3 bg-gray-50 rounded">No hay stock registrado en esta sucursal.</p>`;
       } else {
         container.innerHTML = stockData.map(item => {
+          currentBranchStock[item.product_id] = item.qty;
           const nameFormatted = item.product_id.replace(/-/g, ' ');
           selectConsume.innerHTML += `<option value="${item.product_id}">${nameFormatted} (Disponible: ${item.qty})</option>`;
           
@@ -530,32 +551,34 @@
         .order('created_at', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-red-600 text-center">Error al cargar pedidos: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-3 text-red-600 text-center">Error al cargar pedidos: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-gray-500 text-center">No hay pedidos generados para esta sucursal.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-3 text-gray-500 text-center">No hay pedidos registrados para esta sucursal.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = data.map(o => {
         let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">${o.status}</span>`;
         if (o.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">APROBADO</span>`;
+        else if (o.status === 'CONSOLIDADO') statusBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">CONSOLIDADO</span>`;
 
-        let actionBtn = '';
+        let actionBtn = '-';
         if (currentUserRole !== 'VIGILADOR' && o.status === 'PENDIENTE') {
-          actionBtn = `<button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Aprobar</button>`;
+          actionBtn = `<button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar y Derivar</button>`;
         }
 
         return `
           <tr class="border-b hover:bg-gray-100">
             <td class="p-2.5 font-bold">#${o.id}</td>
             <td class="p-2.5 font-mono">${o.periodo}</td>
-            <td class="p-2.5 uppercase">${o.building_id}</td>
+            <td class="p-2.5 uppercase font-bold">${o.building_id}</td>
             <td class="p-2.5">${statusBadge}</td>
             <td class="p-2.5 font-bold text-emerald-700">$${parseFloat(o.total_estimated_cost || 0).toFixed(2)}</td>
             <td class="p-2.5 text-gray-500">${o.created_by}</td>
+            <td class="p-2.5 text-gray-500">${o.approved_by || 'Pendiente'}</td>
             <td class="p-2.5">${actionBtn}</td>
           </tr>
         `;
@@ -567,18 +590,24 @@
       const itemsList = document.getElementById('order-items-list');
       panel.classList.remove('hidden');
 
-      // Fecha por defecto AAA-MM
       const today = new Date();
       document.getElementById('order-period').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
       itemsList.innerHTML = globalProducts.map(p => {
         const uPrice = globalPrices[p.id] || 0;
+        const currentQty = currentBranchStock[p.id] || 0;
+        // Sugerencia de Reposición Objetivo = 100 unidades base
+        const suggestedQty = Math.max(0, 100 - currentQty);
+
         return `
           <div class="flex items-center justify-between p-2 bg-white rounded border text-xs">
-            <span class="font-semibold w-1/3">${p.name} ($${uPrice.toFixed(2)}/u)</span>
+            <div class="w-1/2">
+              <span class="font-semibold block capitalize">${p.name} ($${uPrice.toFixed(2)}/u)</span>
+              <span class="text-[10px] text-gray-500">Stock Actual: ${currentQty} u | <b class="text-blue-700">Sugerido: ${suggestedQty} u</b></span>
+            </div>
             <div class="flex items-center gap-2">
-              <label class="text-[10px] text-gray-500">Cantidad:</label>
-              <input type="number" id="order-qty-${p.id}" min="0" value="0" onchange="calculateOrderTotal()" class="w-20 p-1 border rounded text-xs text-center">
+              <label class="text-[10px] font-bold text-gray-700">Cantidad Solicitada:</label>
+              <input type="number" id="order-qty-${p.id}" min="0" value="${suggestedQty}" onchange="calculateOrderTotal()" class="w-20 p-1 border rounded text-xs text-center font-bold">
             </div>
           </div>
         `;
@@ -627,7 +656,6 @@
 
       if (itemsToInsert.length === 0) return alert('Debes solicitar al menos 1 producto.');
 
-      // Crear Cabecera del Pedido
       const { data: orderData, error: orderErr } = await supabaseClient
         .from('pedidos')
         .insert([{
@@ -643,11 +671,10 @@
 
       if (orderErr) return alert(`Error al crear pedido: ${orderErr.message}`);
 
-      // Insertar Detalles
       const detailsWithId = itemsToInsert.map(item => ({ ...item, pedido_id: orderData.id }));
       await supabaseClient.from('pedidos_detalle').insert(detailsWithId);
 
-      alert('Pedido mensual enviado exitosamente para aprobación.');
+      alert('Pedido cargado y enviado a la Coordinación para su revisión y aprobación.');
       closeNewOrderModal();
       loadOrders();
     }
@@ -660,7 +687,21 @@
 
       if (error) alert(`Error al aprobar: ${error.message}`);
       else {
-        alert('Pedido aprobado con éxito.');
+        alert('Pedido aprobado exitosamente por la Coordinación.');
+        loadOrders();
+      }
+    }
+
+    async function consolidateArgentinaOrders() {
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .update({ status: 'CONSOLIDADO', approved_by: currentUser.email, updated_at: new Date() })
+        .neq('building_id', 'montevideo')
+        .eq('status', 'APROBADO');
+
+      if (error) alert(`Error al consolidar: ${error.message}`);
+      else {
+        alert('Se han consolidado todos los pedidos aprobados de Argentina (RN-011) para su envío unificado al proveedor.');
         loadOrders();
       }
     }
