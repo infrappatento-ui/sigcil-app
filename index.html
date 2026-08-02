@@ -70,7 +70,7 @@
         <div class="flex border-b mb-6 text-xs font-bold space-x-1" id="view-tabs">
           <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-3 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
           <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Pedidos Mensuales</button>
-          <button id="view-users-btn" onclick="switchView('users')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Usuarios (RN-004)</button>
+          <button id="view-users-btn" onclick="switchView('users')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Gestión de Usuarios (Admin)</button>
           <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada</button>
         </div>
 
@@ -250,12 +250,12 @@
           </div>
         </div>
 
-        <!-- Sección 3: Módulo de Usuarios y Perfiles (RN-004) -->
+        <!-- Sección 3: Módulo de Usuarios (Solo Administrador / Jefe) -->
         <div id="view-users" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Administración de Usuarios y Perfiles (RN-004)</h2>
-              <p class="text-xs text-gray-500">Gestión de roles y asignación de sucursales. Los usuarios se inactivan, conservando la trazabilidad de sus acciones.</p>
+              <p class="text-xs text-gray-500">Módulo restringido a perfiles de administración funcional.</p>
             </div>
           </div>
 
@@ -267,11 +267,10 @@
                   <th class="p-2.5">Rol Funcional</th>
                   <th class="p-2.5">Sucursal Asignada</th>
                   <th class="p-2.5">Estado</th>
-                  <th class="p-2.5">Acción</th>
                 </tr>
               </thead>
               <tbody id="users-table-body">
-                <tr><td colspan="5" class="p-3 text-center text-gray-500">Cargando usuarios...</td></tr>
+                <tr><td colspan="4" class="p-3 text-center text-gray-500">Cargando usuarios...</td></tr>
               </tbody>
             </table>
           </div>
@@ -303,7 +302,6 @@
     let globalProducts = [];
     let globalPrices = {};
     let currentBranchStock = {};
-    let globalSucursales = [];
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -367,9 +365,15 @@
         ? 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 uppercase'
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
-      if (currentUserRole !== 'VIGILADOR' && currentUserRole !== 'INTENDENTE') {
+      if (currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE' || currentUserRole === 'CONTROLLER') {
         document.getElementById('view-cons-btn').classList.remove('hidden');
         document.getElementById('btn-consolidate-ar').classList.remove('hidden');
+      }
+
+      if (currentUserRole === 'ADMINISTRADOR' || currentUserRole === 'JEFE') {
+        document.getElementById('view-users-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('view-users-btn').classList.add('hidden');
       }
 
       await loadBranches();
@@ -383,7 +387,6 @@
       const select = document.getElementById('branch-select');
       const { data, error } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true).order('name');
       if (!error && data) {
-        globalSucursales = data;
         select.innerHTML = data.map(b => `<option value="${b.id}">[${b.country}] ${b.name}</option>`).join('');
 
         if (userAssignedBuilding && (currentUserRole === 'INTENDENTE' || currentUserRole === 'VIGILADOR')) {
@@ -395,21 +398,20 @@
       }
     }
 
-async function toggleUserStatus(userId, currentIsActive) {
-  const newStatus = !currentIsActive;
-  
-  const { data, error } = await supabaseClient.rpc('toggle_user_status', {
-    p_user_id: userId,
-    p_is_active: newStatus
-  });
+    async function loadCatalog() {
+      const selectIngress = document.getElementById('ingress-product-select');
+      const { data, error } = await supabaseClient.from('productos').select('id, name').order('name');
+      if (!error && data) {
+        globalProducts = data;
+        selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>' + 
+          data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      }
 
-  if (error) {
-    alert(`Error al actualizar estado: ${error.message}`);
-  } else {
-    alert(newStatus ? 'Usuario reactivado correctamente.' : 'Usuario inactivado correctamente (RN-004).');
-    loadUsersList();
-  }
-}
+      const { data: pricesData } = await supabaseClient.from('precios_insumos').select('product_id, estimated_unit_price');
+      if (pricesData) {
+        pricesData.forEach(p => { globalPrices[p.product_id] = p.estimated_unit_price; });
+      }
+    }
 
     function switchView(view) {
       const opDiv = document.getElementById('view-operational');
@@ -637,12 +639,12 @@ async function toggleUserStatus(userId, currentIsActive) {
       const { data, error } = await supabaseClient.from('vw_usuarios_sistema').select('*').order('email');
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-red-600 text-center">Error al cargar lista de usuarios: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-red-600 text-center">Error al cargar lista de usuarios: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-gray-500 text-center">No hay usuarios registrados en el sistema.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-gray-500 text-center">No hay usuarios registrados en el sistema.</td></tr>`;
         return;
       }
 
@@ -651,33 +653,15 @@ async function toggleUserStatus(userId, currentIsActive) {
           ? `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVO</span>`
           : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">INACTIVO</span>`;
 
-        const toggleBtnText = u.is_active !== false ? 'Inactivar (RN-004)' : 'Reactivar';
-        const toggleBtnClass = u.is_active !== false ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700';
-
         return `
           <tr class="border-b hover:bg-gray-100">
             <td class="p-2.5 font-semibold">${u.email}</td>
             <td class="p-2.5 font-bold text-slate-700">${u.role || 'SIN ROL'}</td>
             <td class="p-2.5 uppercase font-mono">${u.building_id || 'TODAS (GLOBAL)'}</td>
             <td class="p-2.5">${activeBadge}</td>
-            <td class="p-2.5">
-              <button onclick="toggleUserStatus('${u.id}', ${u.is_active !== false})" class="text-white px-2 py-1 rounded text-[10px] font-bold ${toggleBtnClass}">
-                ${toggleBtnText}
-              </button>
-            </td>
           </tr>
         `;
       }).join('');
-    }
-
-    async function toggleUserStatus(userId, currentIsActive) {
-      const { error } = await supabaseClient
-        .from('profiles')
-        .update({ is_active: !currentIsActive, updated_at: new Date() })
-        .eq('id', userId);
-
-      if (error) alert(`Error al actualizar estado: ${error.message}`);
-      else loadUsersList();
     }
 
     function openNewOrderModal() {
