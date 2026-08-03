@@ -57,7 +57,7 @@
           
           <div class="text-right">
             <label class="block text-xs font-bold text-gray-600 mb-1">Sucursal / Depósito:</label>
-            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders(); loadRecepciones();" class="p-2 border rounded text-xs bg-slate-50 font-semibold disabled:bg-gray-200 disabled:text-gray-600">
+            <select id="branch-select" onchange="onBranchChange()" class="p-2 border rounded text-xs bg-slate-50 font-semibold disabled:bg-gray-200 disabled:text-gray-600">
               <option value="">Cargando sucursales...</option>
             </select>
           </div>
@@ -65,16 +65,17 @@
           <button onclick="logout()" class="text-xs text-red-600 underline ml-4">Cerrar Sesión</button>
         </div>
 
-        <!-- Pestañas de Navegación -->
+        <!-- Pestañas de Navegación Dinámicas -->
         <div class="flex border-b mb-6 text-xs font-bold space-x-1" id="view-tabs">
           <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-3 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
           <button id="view-reception-btn" onclick="switchView('receptions')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Recepciones (RN-006)</button>
-          <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Pedidos Mensuales</button>
+          <button id="view-staff-btn" onclick="switchView('staff')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Personal Operativo</button>
+          <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Pedidos Mensuales</button>
           <button id="view-users-btn" onclick="switchView('users')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Gestión de Usuarios (Admin)</button>
           <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada</button>
         </div>
 
-        <!-- Vista Operativa -->
+        <!-- Sección 1: Vista Operativa -->
         <div id="view-operational">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="md:col-span-2">
@@ -95,17 +96,20 @@
               <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
                 <div>
                   <label class="block text-xs font-bold text-gray-700">Producto</label>
-                  <select id="product-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <select id="product-select" onchange="validateConsumeQty()" class="w-full p-2 border rounded text-xs bg-white" required>
                     <option value="">Seleccione insumo...</option>
                   </select>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-gray-700">Cantidad a retirar</label>
-                  <input type="number" id="qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 5">
+                  <input type="number" id="qty-input" min="1" oninput="validateConsumeQty()" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 5">
+                  <span id="qty-avail-msg" class="text-[10px] text-gray-500 mt-1 block"></span>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Informado por (Retira)</label>
-                  <input type="text" id="informed-input" class="w-full p-2 border rounded text-xs" required placeholder="Nombre del personal">
+                  <label class="block text-xs font-bold text-gray-700">Personal que Retira (Limpieza/Seguridad)</label>
+                  <select id="informed-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                    <option value="">Seleccione personal...</option>
+                  </select>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
@@ -117,22 +121,30 @@
             </div>
           </div>
 
-          <!-- Auditoría -->
+          <!-- Auditoría e Historial de Movimientos -->
           <div class="border-t pt-6">
             <div class="flex justify-between items-center mb-3">
-              <h2 class="text-lg font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
-              <button onclick="exportAuditCSV()" class="bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-800">📥 Exportar CSV</button>
+              <div>
+                <h2 class="text-lg font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
+                <p class="text-xs text-gray-500">Consulta de movimientos con filtro mensual de trazabilidad.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-gray-600">Filtrar por Mes:</label>
+                <input type="month" id="audit-month-filter" onchange="loadAuditLog()" class="p-1.5 border rounded text-xs bg-white">
+                <button onclick="clearAuditFilter()" class="bg-gray-200 text-gray-700 px-2 py-1.5 rounded text-xs font-semibold">Ver Todo</button>
+                <button id="btn-export-csv" onclick="exportAuditCSV()" class="bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-800 hidden">📥 Exportar CSV</button>
+              </div>
             </div>
             <div class="overflow-x-auto bg-gray-50 rounded border">
               <table class="w-full text-left text-xs text-gray-600">
                 <thead class="bg-gray-200 text-gray-700 uppercase text-[10px]">
                   <tr>
-                    <th class="p-2.5">Fecha</th>
+                    <th class="p-2.5">Fecha / Hora</th>
                     <th class="p-2.5">Acción</th>
                     <th class="p-2.5">Producto</th>
                     <th class="p-2.5">Cantidad</th>
-                    <th class="p-2.5">Usuario</th>
-                    <th class="p-2.5">Detalle / Proveedor</th>
+                    <th class="p-2.5">Registrado Por (Vigilador)</th>
+                    <th class="p-2.5">Detalle / Retiró</th>
                   </tr>
                 </thead>
                 <tbody id="audit-table-body">
@@ -143,12 +155,61 @@
           </div>
         </div>
 
-        <!-- Módulo de Recepciones (Fase 2 - RN-006) -->
+        <!-- Sección 2: Módulo de Personal Operativo (Limpieza / Seguridad) -->
+        <div id="view-staff" class="hidden">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Gestión de Personal Operativo (Limpieza y Seguridad)</h2>
+              <p class="text-xs text-gray-500">Administración de la nómina autorizada para retiros de insumos en esta sucursal.</p>
+            </div>
+            <button onclick="openStaffModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">+ Registrar Nuevo Personal</button>
+          </div>
+
+          <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
+            <table class="w-full text-left text-xs text-gray-600">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5">Nombre Completo</th>
+                  <th class="p-2.5">Función / Área</th>
+                  <th class="p-2.5">Estado</th>
+                  <th class="p-2.5">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="staff-table-body">
+                <tr><td colspan="4" class="p-3 text-center text-gray-500">Cargando nómina de personal...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Formulario Nuevo Personal -->
+          <div id="staff-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
+            <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-3">Alta de Personal Operativo</h3>
+            <form onsubmit="handleSaveStaff(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Nombre y Apellido:</label>
+                <input type="text" id="staff-name" class="w-full p-2 border rounded text-xs bg-white" required placeholder="Ej: Pedro Ramírez">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Función:</label>
+                <select id="staff-role" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <option value="LIMPIEZA">Personal de Limpieza</option>
+                  <option value="VIGILANCIA">Personal de Seguridad / Vigilancia</option>
+                </select>
+              </div>
+              <div class="flex items-end gap-2">
+                <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-emerald-700">Guardar</button>
+                <button type="button" onclick="closeStaffModal()" class="bg-gray-300 text-gray-800 px-3 py-2 rounded text-xs font-bold">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sección 3: Módulo de Recepciones (RN-006) -->
         <div id="view-receptions" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
-              <p class="text-xs text-gray-500">El Vigilador carga la recepción física. El Intendente audita el detalle para aprobar (total/parcial) o rechazar.</p>
+              <p class="text-xs text-gray-500">El Vigilador carga la recepción física del remito. El Intendente audita y aprueba.</p>
             </div>
             <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Recepción Física (Vigilador)</button>
           </div>
@@ -163,7 +224,7 @@
                   <th class="p-2.5">Registrado Por</th>
                   <th class="p-2.5">Estado</th>
                   <th class="p-2.5">Validado Por</th>
-                  <th class="p-2.5">Acción de Supervisión</th>
+                  <th class="p-2.5">Acción</th>
                 </tr>
               </thead>
               <tbody id="receptions-table-body">
@@ -199,7 +260,7 @@
             </div>
           </div>
 
-          <!-- Modal Auditoría / Validación Intendencia -->
+          <!-- Modal Auditoría Intendencia -->
           <div id="reception-audit-panel" class="hidden bg-slate-100 p-5 rounded border border-blue-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <div>
@@ -210,7 +271,7 @@
             </div>
 
             <div class="mb-4">
-              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos (Verificar o Ajustar Cantidades):</h4>
+              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos:</h4>
               <div id="audit-rec-items" class="space-y-2"></div>
             </div>
 
@@ -252,46 +313,13 @@
                   <th class="p-2.5">Costo Estimado</th>
                   <th class="p-2.5">Solicitado Por</th>
                   <th class="p-2.5">Aprobado / Derivado Por</th>
-                  <th class="p-2.5">Acción de Supervisión</th>
+                  <th class="p-2.5">Acción</th>
                 </tr>
               </thead>
               <tbody id="orders-table-body">
                 <tr><td colspan="8" class="p-3 text-center text-gray-500">Cargando historial de pedidos...</td></tr>
               </tbody>
             </table>
-          </div>
-
-          <!-- Modal Pedido Mensual -->
-          <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
-            <div class="flex justify-between items-center mb-3 border-b pb-2">
-              <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
-              <button onclick="closeNewOrderModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Período (Año-Mes):</label>
-                <input type="month" id="order-period" class="w-full p-2 border rounded text-xs bg-white" required>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-700">Observaciones / Justificación de la Sucursal:</label>
-                <input type="text" id="order-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Reposición mensual ajustada por evento estacional">
-              </div>
-            </div>
-
-            <h4 class="text-xs font-bold text-gray-700 mb-2">Detalle de Insumos y Sugerencia de Reposición:</h4>
-            <div id="order-items-list" class="space-y-2 mb-4"></div>
-
-            <div class="flex justify-between items-center border-t pt-3">
-              <div>
-                <span class="text-xs text-gray-600 block">Costo Estimado del Pedido:</span>
-                <span id="order-total-cost" class="text-base font-extrabold text-emerald-700">$0.00</span>
-              </div>
-              <div class="space-x-2">
-                <button onclick="closeNewOrderModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
-                <button onclick="submitOrder()" class="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-700">Enviar a Supervisión / Coordinación</button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -405,9 +433,23 @@
         ? 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 uppercase'
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
-      if (currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE' || currentUserRole === 'CONTROLLER') {
+      // Pestañas por rol
+      const isSupervisor = (currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE' || currentUserRole === 'CONTROLLER');
+      const isIntendente = (currentUserRole === 'INTENDENTE');
+      const isVigilador = (currentUserRole === 'VIGILADOR');
+
+      if (isSupervisor) {
         document.getElementById('view-cons-btn').classList.remove('hidden');
         document.getElementById('btn-consolidate-ar').classList.remove('hidden');
+        document.getElementById('btn-export-csv').classList.remove('hidden');
+      }
+
+      if (isIntendente || isSupervisor) {
+        document.getElementById('view-orders-btn').classList.remove('hidden');
+        document.getElementById('btn-export-csv').classList.remove('hidden');
+      } else {
+        document.getElementById('view-orders-btn').classList.add('hidden');
+        document.getElementById('btn-export-csv').classList.add('hidden');
       }
 
       if (currentUserRole === 'ADMINISTRADOR' || currentUserRole === 'JEFE') {
@@ -418,10 +460,15 @@
 
       await loadBranches();
       await loadCatalog();
-      loadStockAndPrices();
+      onBranchChange();
+    }
+
+    async function onBranchChange() {
+      await loadStockAndPrices();
+      await loadStaffSelect();
       loadAuditLog();
-      loadOrders();
       loadRecepciones();
+      loadStaffTable();
     }
 
     async function loadBranches() {
@@ -451,27 +498,51 @@
       }
     }
 
+    async function loadStaffSelect() {
+      const buildingId = document.getElementById('branch-select').value;
+      const select = document.getElementById('informed-select');
+      if (!buildingId) return;
+
+      const { data } = await supabaseClient
+        .from('personal_operativo')
+        .select('id, full_name, role_type')
+        .eq('building_id', buildingId)
+        .eq('is_active', true)
+        .order('full_name');
+
+      if (data && data.length > 0) {
+        select.innerHTML = '<option value="">Seleccione personal...</option>' + 
+          data.map(p => `<option value="${p.full_name}">${p.full_name} (${p.role_type})</option>`).join('');
+      } else {
+        select.innerHTML = '<option value="">No hay personal registrado (Cargar en Personal Operativo)</option>';
+      }
+    }
+
     function switchView(view) {
       const opDiv = document.getElementById('view-operational');
       const recDiv = document.getElementById('view-receptions');
+      const staffDiv = document.getElementById('view-staff');
       const ordersDiv = document.getElementById('view-orders');
       const usersDiv = document.getElementById('view-users');
       const consDiv = document.getElementById('view-consolidated');
 
       const opBtn = document.getElementById('view-op-btn');
       const recBtn = document.getElementById('view-reception-btn');
+      const staffBtn = document.getElementById('view-staff-btn');
       const ordersBtn = document.getElementById('view-orders-btn');
       const usersBtn = document.getElementById('view-users-btn');
       const consBtn = document.getElementById('view-cons-btn');
 
       opDiv.classList.add('hidden');
       recDiv.classList.add('hidden');
+      staffDiv.classList.add('hidden');
       ordersDiv.classList.add('hidden');
       usersDiv.classList.add('hidden');
       consDiv.classList.add('hidden');
 
       opBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       recBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      staffBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       ordersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       usersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       consBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
@@ -483,6 +554,10 @@
         recDiv.classList.remove('hidden');
         recBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
         loadRecepciones();
+      } else if (view === 'staff') {
+        staffDiv.classList.remove('hidden');
+        staffBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
+        loadStaffTable();
       } else if (view === 'orders') {
         ordersDiv.classList.remove('hidden');
         ordersBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
@@ -571,17 +646,47 @@
       }
     }
 
+    function validateConsumeQty() {
+      const productId = document.getElementById('product-select').value;
+      const qtyInput = document.getElementById('qty-input');
+      const msgSpan = document.getElementById('qty-avail-msg');
+      const btnSubmit = document.getElementById('btn-submit-consume');
+
+      if (!productId) {
+        msgSpan.textContent = '';
+        btnSubmit.disabled = false;
+        return;
+      }
+
+      const available = currentBranchStock[productId] || 0;
+      const entered = parseInt(qtyInput.value) || 0;
+
+      if (entered > available) {
+        msgSpan.textContent = `❌ Excede el disponible (${available} u)`;
+        msgSpan.className = 'text-[10px] text-red-600 font-bold mt-1 block';
+        btnSubmit.disabled = true;
+      } else {
+        msgSpan.textContent = `Disponible en stock: ${available} u`;
+        msgSpan.className = 'text-[10px] text-emerald-700 font-semibold mt-1 block';
+        btnSubmit.disabled = false;
+      }
+    }
+
     async function loadAuditLog() {
       const buildingId = document.getElementById('branch-select').value;
+      const monthFilter = document.getElementById('audit-month-filter').value;
       if (!buildingId) return;
 
       const tbody = document.getElementById('audit-table-body');
-      const { data, error } = await supabaseClient
-        .from('audit_log')
-        .select('*')
-        .eq('building_id', buildingId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      let query = supabaseClient.from('audit_log').select('*').eq('building_id', buildingId);
+
+      if (monthFilter) {
+        const startDate = `${monthFilter}-01T00:00:00`;
+        const endDate = `${monthFilter}-31T23:59:59`;
+        query = query.gte('created_at', startDate).lte('created_at', endDate);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
 
       if (error) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-red-600 text-center">Error al cargar auditoría: ${error.message}</td></tr>`;
@@ -591,7 +696,7 @@
       currentAuditData = data || [];
 
       if (currentAuditData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-gray-500 text-center">No hay movimientos registrados para esta sucursal.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-gray-500 text-center">No hay movimientos registrados para el filtro seleccionado.</td></tr>`;
         return;
       }
 
@@ -607,11 +712,148 @@
             <td class="p-2.5">${actionBadge}</td>
             <td class="p-2.5 font-medium capitalize">${(row.product_id || '').replace(/-/g, ' ')}</td>
             <td class="p-2.5 font-bold">${row.qty_changed} u</td>
-            <td class="p-2.5 text-gray-500">${row.registered_by || '-'}</td>
+            <td class="p-2.5 text-gray-600 font-semibold">${row.registered_by || '-'}</td>
             <td class="p-2.5 text-gray-500">${row.note || '-'}</td>
           </tr>
         `;
       }).join('');
+    }
+
+    function clearAuditFilter() {
+      document.getElementById('audit-month-filter').value = '';
+      loadAuditLog();
+    }
+
+    async function loadStaffTable() {
+      const buildingId = document.getElementById('branch-select').value;
+      if (!buildingId) return;
+
+      const tbody = document.getElementById('staff-table-body');
+      const { data, error } = await supabaseClient
+        .from('personal_operativo')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('full_name');
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-red-600 text-center">Error al cargar personal: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-gray-500 text-center">No hay personal registrado en esta sucursal.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(s => {
+        const statusBadge = s.is_active
+          ? `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVO</span>`
+          : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">INACTIVO</span>`;
+
+        const actionBtn = s.is_active
+          ? `<button onclick="toggleStaffStatus(${s.id}, false)" class="text-red-600 font-bold hover:underline">Dar de Baja</button>`
+          : `<button onclick="toggleStaffStatus(${s.id}, true)" class="text-emerald-700 font-bold hover:underline">Reactivar</button>`;
+
+        return `
+          <tr class="border-b hover:bg-gray-100">
+            <td class="p-2.5 font-semibold text-slate-800">${s.full_name}</td>
+            <td class="p-2.5 font-bold text-gray-600">${s.role_type}</td>
+            <td class="p-2.5">${statusBadge}</td>
+            <td class="p-2.5">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openStaffModal() {
+      document.getElementById('staff-form-panel').classList.remove('hidden');
+    }
+
+    function closeStaffModal() {
+      document.getElementById('staff-form-panel').classList.add('hidden');
+    }
+
+    async function handleSaveStaff(e) {
+      e.preventDefault();
+      const buildingId = document.getElementById('branch-select').value;
+      const name = document.getElementById('staff-name').value.trim();
+      const role = document.getElementById('staff-role').value;
+
+      if (!name) return alert('Por favor ingresa nombre y apellido.');
+
+      const { error } = await supabaseClient.from('personal_operativo').insert([{
+        building_id: buildingId,
+        full_name: name,
+        role_type: role,
+        is_active: true
+      }]);
+
+      if (error) {
+        alert(`Error al guardar: ${error.message}`);
+      } else {
+        alert('Personal operativo registrado exitosamente.');
+        document.getElementById('staff-name').value = '';
+        closeStaffModal();
+        loadStaffTable();
+        loadStaffSelect();
+      }
+    }
+
+    async function toggleStaffStatus(staffId, newStatus) {
+      const { error } = await supabaseClient
+        .from('personal_operativo')
+        .update({ is_active: newStatus })
+        .eq('id', staffId);
+
+      if (error) alert(`Error al actualizar estado: ${error.message}`);
+      else {
+        loadStaffTable();
+        loadStaffSelect();
+      }
+    }
+
+    async function handleConsume(e) {
+      e.preventDefault();
+      const msgDiv = document.getElementById('form-msg');
+      const btn = document.getElementById('btn-submit-consume');
+      msgDiv.classList.add('hidden');
+      btn.disabled = true;
+
+      const buildingId = document.getElementById('branch-select').value;
+      const productId = document.getElementById('product-select').value;
+      const qty = parseInt(document.getElementById('qty-input').value);
+      const informedBy = document.getElementById('informed-select').value;
+      const note = document.getElementById('note-input').value;
+
+      if (!informedBy) {
+        alert('Por favor selecciona el personal de la lista que retira el insumo.');
+        btn.disabled = false;
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
+        p_building_id: buildingId,
+        p_product_id: productId,
+        p_qty: qty,
+        p_informed_by: informedBy,
+        p_registered_by: currentUser.email,
+        p_note: note
+      });
+
+      if (error) {
+        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
+        msgDiv.textContent = `Error: ${error.message}`;
+        msgDiv.classList.remove('hidden');
+      } else {
+        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
+        msgDiv.textContent = 'Consumo registrado exitosamente.';
+        msgDiv.classList.remove('hidden');
+        document.getElementById('consumption-form').reset();
+        document.getElementById('qty-avail-msg').textContent = '';
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+      btn.disabled = false;
     }
 
     async function loadRecepciones() {
@@ -686,93 +928,6 @@
       document.getElementById('reception-form-panel').classList.add('hidden');
     }
 
-    async function openAuditModal(recId, remito, registeredBy, notes) {
-      activeAuditRecId = recId;
-      const panel = document.getElementById('reception-audit-panel');
-      const title = document.getElementById('audit-rec-title');
-      const subtitle = document.getElementById('audit-rec-subtitle');
-      const itemsContainer = document.getElementById('audit-rec-items');
-
-      title.textContent = `Auditoría de Recepción #${recId} - Remito N°: ${remito}`;
-      subtitle.textContent = `Registrado por Vigilancia: ${registeredBy} | Observaciones: ${notes || 'Sin observaciones'}`;
-
-      const { data: details, error } = await supabaseClient
-        .from('recepciones_detalle')
-        .select('*')
-        .eq('recepcion_id', recId);
-
-      if (error || !details) return alert('Error al cargar detalle del remito.');
-
-      itemsContainer.innerHTML = details.map(d => {
-        const prodName = d.product_id.replace(/-/g, ' ');
-        return `
-          <div class="flex items-center justify-between p-2.5 bg-white rounded border border-gray-300 text-xs">
-            <div>
-              <span class="font-bold text-slate-800 capitalize block">${prodName}</span>
-              <span class="text-[10px] text-gray-500">Insumo en Remito</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <label class="text-[10px] font-bold text-slate-700">Cantidad Aprobada:</label>
-              <input type="number" id="audit-qty-${d.id}" data-detail-id="${d.id}" min="0" value="${d.qty_received}" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      panel.classList.remove('hidden');
-    }
-
-    function closeAuditModal() {
-      document.getElementById('reception-audit-panel').classList.add('hidden');
-      activeAuditRecId = null;
-    }
-
-    async function confirmarValidacionIntendencia() {
-      if (!activeAuditRecId) return;
-
-      const inputs = document.querySelectorAll('[id^="audit-qty-"]');
-      for (let input of inputs) {
-        const detailId = input.getAttribute('data-detail-id');
-        const newQty = parseInt(input.value) || 0;
-        await supabaseClient.from('recepciones_detalle').update({ qty_received: newQty }).eq('id', detailId);
-      }
-
-      const { data, error } = await supabaseClient.rpc('validar_recepcion', {
-        p_recepcion_id: activeAuditRecId,
-        p_validated_by: currentUser.email
-      });
-
-      if (error) {
-        alert(`Error al validar: ${error.message}`);
-      } else {
-        alert('Recepción auditada y validada correctamente. El stock ha sido incrementado.');
-        closeAuditModal();
-        loadRecepciones();
-        loadStockAndPrices();
-        loadAuditLog();
-      }
-    }
-
-    async function rechazarRecepcionAction() {
-      if (!activeAuditRecId) return;
-      const reason = prompt('Por favor ingresa la razón o justificación del rechazo del remito:');
-      if (!reason) return;
-
-      const { data, error } = await supabaseClient.rpc('rechazar_recepcion', {
-        p_recepcion_id: activeAuditRecId,
-        p_validated_by: currentUser.email,
-        p_reason: reason
-      });
-
-      if (error) {
-        alert(`Error al rechazar: ${error.message}`);
-      } else {
-        alert('Recepción rechazada correctamente. No se ha modificado el stock.');
-        closeAuditModal();
-        loadRecepciones();
-      }
-    }
-
     async function submitReception() {
       const buildingId = document.getElementById('branch-select').value;
       const remito = document.getElementById('rec-remito').value.trim();
@@ -811,307 +966,6 @@
       alert('Recepción registrada con éxito. Estado: PENDIENTE DE VALIDACIÓN POR INTENDENCIA (RN-006).');
       closeNewReceptionModal();
       loadRecepciones();
-    }
-
-    async function handleConsume(e) {
-      e.preventDefault();
-      const msgDiv = document.getElementById('form-msg');
-      const btn = document.getElementById('btn-submit-consume');
-      msgDiv.classList.add('hidden');
-      btn.disabled = true;
-
-      const buildingId = document.getElementById('branch-select').value;
-      const productId = document.getElementById('product-select').value;
-      const qty = parseInt(document.getElementById('qty-input').value);
-      const informedBy = document.getElementById('informed-input').value;
-      const note = document.getElementById('note-input').value;
-
-      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
-        p_building_id: buildingId,
-        p_product_id: productId,
-        p_qty: qty,
-        p_informed_by: informedBy,
-        p_registered_by: currentUser.email,
-        p_note: note
-      });
-
-      if (error) {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
-        msgDiv.textContent = `Error: ${error.message}`;
-        msgDiv.classList.remove('hidden');
-      } else {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
-        msgDiv.textContent = 'Consumo registrado exitosamente.';
-        msgDiv.classList.remove('hidden');
-        document.getElementById('consumption-form').reset();
-        loadStockAndPrices();
-        loadAuditLog();
-      }
-      btn.disabled = false;
-    }
-
-    async function loadOrders() {
-      const buildingId = document.getElementById('branch-select').value;
-      if (!buildingId) return;
-
-      const tbody = document.getElementById('orders-table-body');
-      const { data, error } = await supabaseClient
-        .from('pedidos')
-        .select('*')
-        .eq('building_id', buildingId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-3 text-red-600 text-center">Error al cargar pedidos: ${error.message}</td></tr>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-3 text-gray-500 text-center">No hay pedidos registrados para esta sucursal.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = data.map(o => {
-        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">${o.status}</span>`;
-        if (o.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">APROBADO</span>`;
-        else if (o.status === 'CONSOLIDADO') statusBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">CONSOLIDADO</span>`;
-
-        let actionBtn = '-';
-        if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && o.status === 'PENDIENTE') {
-          actionBtn = `<button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar y Derivar</button>`;
-        }
-
-        return `
-          <tr class="border-b hover:bg-gray-100">
-            <td class="p-2.5 font-bold">#${o.id}</td>
-            <td class="p-2.5 font-mono">${o.periodo}</td>
-            <td class="p-2.5 uppercase font-bold">${o.building_id}</td>
-            <td class="p-2.5">${statusBadge}</td>
-            <td class="p-2.5 font-bold text-emerald-700">$${parseFloat(o.total_estimated_cost || 0).toFixed(2)}</td>
-            <td class="p-2.5 text-gray-500">${o.created_by}</td>
-            <td class="p-2.5 text-gray-500">${o.approved_by || 'Pendiente'}</td>
-            <td class="p-2.5">${actionBtn}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function loadUsersList() {
-      const tbody = document.getElementById('users-table-body');
-      const { data, error } = await supabaseClient.from('vw_usuarios_sistema').select('*').order('email');
-
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-red-600 text-center">Error al cargar lista de usuarios: ${error.message}</td></tr>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-gray-500 text-center">No hay usuarios registrados en el sistema.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = data.map(u => {
-        const activeBadge = u.is_active !== false
-          ? `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVO</span>`
-          : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">INACTIVO</span>`;
-
-        return `
-          <tr class="border-b hover:bg-gray-100">
-            <td class="p-2.5 font-semibold">${u.email}</td>
-            <td class="p-2.5 font-bold text-slate-700">${u.role || 'SIN ROL'}</td>
-            <td class="p-2.5 uppercase font-mono">${u.building_id || 'TODAS (GLOBAL)'}</td>
-            <td class="p-2.5">${activeBadge}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function openNewOrderModal() {
-      const panel = document.getElementById('order-form-panel');
-      const itemsList = document.getElementById('order-items-list');
-      panel.classList.remove('hidden');
-
-      const today = new Date();
-      document.getElementById('order-period').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-
-      itemsList.innerHTML = globalProducts.map(p => {
-        const uPrice = globalPrices[p.id] || 0;
-        const currentQty = currentBranchStock[p.id] || 0;
-        const suggestedQty = Math.max(0, 100 - currentQty);
-
-        return `
-          <div class="flex items-center justify-between p-2 bg-white rounded border text-xs">
-            <div class="w-1/2">
-              <span class="font-semibold block capitalize">${p.name} ($${uPrice.toFixed(2)}/u)</span>
-              <span class="text-[10px] text-gray-500">Stock Actual: ${currentQty} u | <b class="text-blue-700">Sugerido: ${suggestedQty} u</b></span>
-            </div>
-            <div class="flex items-center gap-2">
-              <label class="text-[10px] font-bold text-gray-700">Cantidad Solicitada:</label>
-              <input type="number" id="order-qty-${p.id}" min="0" value="${suggestedQty}" onchange="calculateOrderTotal()" class="w-20 p-1 border rounded text-xs text-center font-bold">
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      calculateOrderTotal();
-    }
-
-    function closeNewOrderModal() {
-      document.getElementById('order-form-panel').classList.add('hidden');
-    }
-
-    function calculateOrderTotal() {
-      let grandTotal = 0;
-      globalProducts.forEach(p => {
-        const input = document.getElementById(`order-qty-${p.id}`);
-        if (input) {
-          const qty = parseInt(input.value) || 0;
-          const uPrice = globalPrices[p.id] || 0;
-          grandTotal += (qty * uPrice);
-        }
-      });
-      document.getElementById('order-total-cost').textContent = `$${grandTotal.toFixed(2)}`;
-    }
-
-    async function submitOrder() {
-      const buildingId = document.getElementById('branch-select').value;
-      const periodo = document.getElementById('order-period').value;
-      const notes = document.getElementById('order-notes').value;
-
-      if (!periodo) return alert('Por favor selecciona el período.');
-
-      let totalCost = 0;
-      let itemsToInsert = [];
-
-      globalProducts.forEach(p => {
-        const input = document.getElementById(`order-qty-${p.id}`);
-        const qty = parseInt(input?.value) || 0;
-        if (qty > 0) {
-          const uPrice = globalPrices[p.id] || 0;
-          const subtotal = qty * uPrice;
-          totalCost += subtotal;
-          itemsToInsert.push({ product_id: p.id, qty_requested: qty, unit_price: uPrice, subtotal });
-        }
-      });
-
-      if (itemsToInsert.length === 0) return alert('Debes solicitar al menos 1 producto.');
-
-      const { data: orderData, error: orderErr } = await supabaseClient
-        .from('pedidos')
-        .insert([{
-          building_id: buildingId,
-          periodo: periodo,
-          status: 'PENDIENTE',
-          created_by: currentUser.email,
-          total_estimated_cost: totalCost,
-          notes: notes
-        }])
-        .select()
-        .single();
-
-      if (orderErr) return alert(`Error al crear pedido: ${orderErr.message}`);
-
-      const detailsWithId = itemsToInsert.map(item => ({ ...item, pedido_id: orderData.id }));
-      await supabaseClient.from('pedidos_detalle').insert(detailsWithId);
-
-      alert('Pedido cargado y enviado a la Coordinación para su revisión y aprobación.');
-      closeNewOrderModal();
-      loadOrders();
-    }
-
-    async function approveOrder(orderId) {
-      const { error } = await supabaseClient
-        .from('pedidos')
-        .update({ status: 'APROBADO', approved_by: currentUser.email, updated_at: new Date() })
-        .eq('id', orderId);
-
-      if (error) alert(`Error al aprobar: ${error.message}`);
-      else {
-        alert('Pedido aprobado exitosamente por la Coordinación.');
-        loadOrders();
-      }
-    }
-
-    async function consolidateArgentinaOrders() {
-      const { data, error } = await supabaseClient
-        .from('pedidos')
-        .update({ status: 'CONSOLIDADO', approved_by: currentUser.email, updated_at: new Date() })
-        .neq('building_id', 'montevideo')
-        .eq('status', 'APROBADO');
-
-      if (error) alert(`Error al consolidar: ${error.message}`);
-      else {
-        alert('Se han consolidado todos los pedidos aprobados de Argentina (RN-011) para su envío unificado al proveedor.');
-        loadOrders();
-      }
-    }
-
-    function exportAuditCSV() {
-      if (!currentAuditData || currentAuditData.length === 0) {
-        return alert('No hay datos de auditoría para exportar.');
-      }
-
-      const headers = ['Fecha', 'Acción', 'Producto', 'Cantidad', 'Usuario', 'Nota / Detalle'];
-      const rows = currentAuditData.map(r => [
-        `"${new Date(r.created_at).toISOString()}"`,
-        `"${r.action}"`,
-        `"${r.product_id}"`,
-        r.qty_changed,
-        `"${r.registered_by}"`,
-        `"${(r.note || '').replace(/"/g, '""')}"`
-      ]);
-
-      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      const buildingId = document.getElementById('branch-select').value;
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `auditoria_sigcil_${buildingId}_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    async function loadConsolidatedMatrix() {
-      const thead = document.getElementById('consolidated-thead');
-      const tbody = document.getElementById('consolidated-tbody');
-
-      const { data: sucursales } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true).order('name');
-      const { data: productos } = await supabaseClient.from('productos').select('id, name').order('name');
-      const { data: stockData } = await supabaseClient.from('stock').select('building_id, product_id, qty');
-
-      if (!sucursales || !productos || !stockData) {
-        tbody.innerHTML = '<tr><td class="p-3 text-red-600 text-center">Error al cargar la matriz consolidada.</td></tr>';
-        return;
-      }
-
-      let stockMap = {};
-      stockData.forEach(s => {
-        if (!stockMap[s.product_id]) stockMap[s.product_id] = {};
-        stockMap[s.product_id][s.building_id] = s.qty;
-      });
-
-      thead.innerHTML = `
-        <tr>
-          <th class="p-2.5 border">Producto</th>
-          ${sucursales.map(s => `<th class="p-2.5 border text-center">[${s.country}] ${s.name}</th>`).join('')}
-        </tr>
-      `;
-
-      tbody.innerHTML = productos.map(p => {
-        return `
-          <tr class="border-b hover:bg-gray-100">
-            <td class="p-2.5 font-semibold capitalize border">${p.name}</td>
-            ${sucursales.map(s => {
-              const qty = stockMap[p.id]?.[s.id] ?? 0;
-              let bg = 'bg-slate-50';
-              if (qty > 0 && qty <= 10) bg = 'bg-red-50 text-red-700 font-bold';
-              else if (qty >= 200) bg = 'bg-amber-50 text-amber-800 font-bold';
-              return `<td class="p-2.5 text-center border ${bg}">${qty} u</td>`;
-            }).join('')}
-          </tr>
-        `;
-      }).join('');
     }
 
     const savedUrl = localStorage.getItem('sb_url');
