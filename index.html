@@ -368,18 +368,18 @@
               <button onclick="rechazarRecepcionAction()" class="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700">✖ Rechazar Recepción</button>
               <div class="space-x-2">
                 <button onclick="closeAuditModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
-                <button onclick="confirmarValidacionIntendencia()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">✔ Aprobar e Impactar en Stock (RN-006)</button>
+                <button onclick="confirmarValidacionIntendencia()" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">✔ Aprobar e Impactar en Stock (RN-006)</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Sección 4: Pedidos Mensuales -->
+        <!-- Sección 4: Pedidos Mensuales con Modal de Visualización Detallada -->
         <div id="view-orders" class="hidden">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
             <div>
               <h2 class="text-base font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
-              <p class="text-[11px] text-gray-500">Confección de pedidos con Sugerido Inteligente a 1.5 meses de Cobertura (RN-007).</p>
+              <p class="text-[11px] text-gray-500">Confección y consulta de pedidos con Sugerido Inteligente a 1.5 meses de Cobertura (RN-007).</p>
             </div>
             <div class="flex gap-2">
               <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800 hidden">
@@ -411,6 +411,7 @@
             </table>
           </div>
 
+          <!-- Modal Confección Pedido Mensual -->
           <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
@@ -440,6 +441,37 @@
                 <button onclick="closeNewOrderModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
                 <button onclick="submitOrder()" class="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-700">Enviar a Coordinación</button>
               </div>
+            </div>
+          </div>
+
+          <!-- Modal Ver Detalle de Pedido Existente -->
+          <div id="order-detail-panel" class="hidden bg-slate-100 p-4 rounded border border-blue-300 mb-6 shadow-sm">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <div>
+                <h3 class="text-sm font-bold text-slate-800" id="detail-order-title">Detalle de Pedido</h3>
+                <p class="text-[11px] text-gray-600" id="detail-order-subtitle"></p>
+              </div>
+              <button onclick="closeOrderDetailModal()" class="text-xs text-gray-500 font-bold hover:text-gray-800">Cerrar [X]</button>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded border max-h-60 overflow-y-auto mb-4">
+              <table class="w-full text-left text-xs text-gray-600">
+                <thead class="bg-gray-200 text-gray-700 uppercase text-[9px]">
+                  <tr>
+                    <th class="p-2">Insumo</th>
+                    <th class="p-2 text-center">Cantidad Solicitada</th>
+                    <th class="p-2 text-right">Precio Unitario</th>
+                    <th class="p-2 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody id="detail-order-items-body">
+                  <tr><td colspan="4" class="p-2 text-center text-gray-500">Cargando ítems...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="flex justify-end border-t pt-2">
+              <button onclick="closeOrderDetailModal()" class="bg-slate-700 text-white px-4 py-1 rounded text-xs font-bold hover:bg-slate-800">Cerrar Vista</button>
             </div>
           </div>
         </div>
@@ -488,7 +520,7 @@
           </div>
         </div>
 
-        <!-- Sección 6: Transferencias con Validación de Sobrestock Local (RN-009) -->
+        <!-- Sección 6: Transferencias -->
         <div id="view-transferencias" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -543,10 +575,8 @@
               </div>
             </div>
 
-            <!-- Panel Informativo de Disponibilidad en Origen y Destino -->
             <div id="trans-stock-info" class="hidden mb-3 p-2 rounded text-xs font-semibold"></div>
 
-            <!-- Campo Justificación de Sobrestock Local -->
             <div id="trans-overstock-reason-container" class="hidden mb-4 p-2.5 bg-amber-50 rounded border border-amber-300">
               <label class="block text-xs font-bold text-amber-900 mb-1">⚠️ Justificación Obligatoria por Sobrestock Local:</label>
               <p class="text-[10px] text-amber-800 mb-1.5">Tu sucursal ya dispone de stock suficiente ($>45$ días de cobertura). Ingresa la razón de la solicitud adicional:</p>
@@ -1091,9 +1121,10 @@
         if (o.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">APROBADO</span>`;
         else if (o.status === 'CONSOLIDADO') statusBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded text-[9px]">CONSOLIDADO</span>`;
 
-        let actionBtn = '-';
+        let actionBtn = `<button onclick="openOrderDetailModal(${o.id}, '${o.periodo}', '${o.status}', '${o.total_estimated_cost}')" class="bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Ver Detalle</button>`;
+        
         if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && o.status === 'PENDIENTE') {
-          actionBtn = `<button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar y Derivar</button>`;
+          actionBtn += ` <button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar</button>`;
         }
 
         return `
@@ -1109,6 +1140,43 @@
           </tr>
         `;
       }).join('');
+    }
+
+    async function openOrderDetailModal(orderId, periodo, status, totalCost) {
+      const panel = document.getElementById('order-detail-panel');
+      const title = document.getElementById('detail-order-title');
+      const subtitle = document.getElementById('detail-order-subtitle');
+      const itemsBody = document.getElementById('detail-order-items-body');
+      panel.classList.remove('hidden');
+
+      title.textContent = `Detalle del Pedido #${orderId} (Período: ${periodo})`;
+      subtitle.textContent = `Estado: ${status} | Costo Estimado Total: $${parseFloat(totalCost).toFixed(2)}`;
+
+      const { data: details, error } = await supabaseClient
+        .from('pedidos_detalle')
+        .select('*')
+        .eq('pedido_id', orderId);
+
+      if (error || !details) {
+        itemsBody.innerHTML = `<tr><td colspan="4" class="p-2 text-red-600 text-center">Error al cargar detalle del pedido.</td></tr>`;
+        return;
+      }
+
+      itemsBody.innerHTML = details.map(d => {
+        const prodName = d.product_id.replace(/-/g, ' ');
+        return `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2 font-semibold capitalize text-slate-800">${prodName}</td>
+            <td class="p-2 text-center font-bold">${d.qty_requested} u</td>
+            <td class="p-2 text-right">$${parseFloat(d.unit_price || 0).toFixed(2)}</td>
+            <td class="p-2 text-right font-bold text-emerald-700">$${parseFloat(d.subtotal || 0).toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function closeOrderDetailModal() {
+      document.getElementById('order-detail-panel').classList.add('hidden');
     }
 
     async function openNewOrderModal() {
@@ -1571,7 +1639,7 @@
 
       if (error) alert(`Error al aprobar inventario: ${error.message}`);
       else {
-        alert('Ajuste de inventario approved e impactado en el stock correctamente.');
+        alert('Ajuste de inventario aprobado e impactado en el stock correctamente.');
         loadInventories();
         loadStockAndPrices();
         loadAuditLog();
@@ -1648,18 +1716,15 @@
         return;
       }
 
-      // Consultar stock en origen
       const { data: origData } = await supabaseClient.from('stock').select('qty').eq('building_id', origBranch).eq('product_id', prodId).single();
       const origStock = origData ? origData.qty : 0;
 
-      // Consultar stock y sugerido de sucursal local (destino)
       const { data: destSugeridos } = await supabaseClient.rpc('obtener_sugerido_pedido', { p_building_id: destBranch });
       const destProdInfo = destSugeridos ? destSugeridos.find(s => s.product_id === prodId) : null;
       const destCob = destProdInfo ? destProdInfo.cobertura_dias : 0;
 
       infoDiv.classList.remove('hidden');
 
-      // Validar si la sucursal local tiene Sobrestock
       if (destCob > 45) {
         transferDestHasOverstock = true;
         reasonContainer.classList.remove('hidden');
