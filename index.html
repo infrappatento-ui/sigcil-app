@@ -141,7 +141,7 @@
             </div>
           </div>
 
-          <!-- Auditoría con Tabla Compacta y Filtros Combinados -->
+          <!-- Auditoría -->
           <div class="border-t pt-4">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
               <div>
@@ -149,7 +149,6 @@
                 <p class="text-[11px] text-gray-500">Muestra exclusivamente consumos e ingresos confirmados.</p>
               </div>
 
-              <!-- Filtros Avanzados -->
               <div class="flex flex-wrap items-center gap-2">
                 <div>
                   <select id="audit-action-filter" onchange="loadAuditLog()" class="p-1 border rounded text-xs bg-white">
@@ -171,7 +170,6 @@
               </div>
             </div>
 
-            <!-- Tabla Compacta -->
             <div class="overflow-x-auto bg-gray-50 rounded border max-h-64 overflow-y-auto shadow-sm">
               <table class="w-full text-left text-[11px] text-gray-600">
                 <thead class="bg-slate-200 text-slate-800 uppercase text-[9px] sticky top-0">
@@ -241,27 +239,54 @@
           </div>
         </div>
 
-        <!-- Sección 3: Recepciones (RN-006) -->
+        <!-- Sección 3: Recepciones (RN-006 Rediseñado en Tabla Compacta) -->
         <div id="view-receptions" class="hidden">
-          <div class="flex justify-between items-center mb-4">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
             <div>
-              <h2 class="text-lg font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
-              <p class="text-xs text-gray-500">El Vigilador carga el remito físico. El Intendente audita y aprueba.</p>
+              <h2 class="text-base font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
+              <p class="text-[11px] text-gray-500">Gestión de remitos físicos con control y auditoría de la Intendencia.</p>
             </div>
-            <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Recepción Física (Vigilador)</button>
+            <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Remito Físico (Vigilador)</button>
           </div>
 
-          <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
-            <table class="w-full text-left text-xs text-gray-600">
-              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
+          <!-- Filtros de Recepciones -->
+          <div class="flex flex-wrap items-center gap-2 mb-2 bg-gray-50 p-2 rounded border">
+            <div>
+              <label class="text-[10px] font-bold text-gray-600 block">Estado:</label>
+              <select id="rec-status-filter" onchange="loadRecepciones()" class="p-1 border rounded text-xs bg-white">
+                <option value="ALL">Todos los Estados</option>
+                <option value="PENDIENTE_VALIDACION">Pendiente Validación</option>
+                <option value="VALIDADO">Validado e Impactado</option>
+                <option value="RECHAZADO">Rechazado</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-gray-600 block">Registrado Por (Seguridad):</label>
+              <select id="rec-staff-filter" onchange="loadRecepciones()" class="p-1 border rounded text-xs bg-white">
+                <option value="ALL">Todo el Personal</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-gray-600 block">Período / Mes:</label>
+              <input type="month" id="rec-month-filter" onchange="loadRecepciones()" class="p-1 border rounded text-xs bg-white">
+            </div>
+            <div class="flex items-end">
+              <button onclick="clearRecFilters()" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-semibold hover:bg-gray-300">Limpiar Filtros</button>
+            </div>
+          </div>
+
+          <!-- Tabla Compacta de Recepciones -->
+          <div class="overflow-x-auto bg-gray-50 rounded border max-h-64 overflow-y-auto shadow-sm mb-6">
+            <table class="w-full text-left text-[11px] text-gray-600">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[9px] sticky top-0">
                 <tr>
-                  <th class="p-2">ID</th>
-                  <th class="p-2">Fecha</th>
-                  <th class="p-2">N° Remito Proveedor</th>
-                  <th class="p-2">Registrado Por</th>
-                  <th class="p-2">Estado</th>
-                  <th class="p-2">Validado Por</th>
-                  <th class="p-2">Acción</th>
+                  <th class="p-1.5">ID</th>
+                  <th class="p-1.5">Fecha / Hora</th>
+                  <th class="p-1.5">N° Remito</th>
+                  <th class="p-1.5">Registrado Por (Seguridad)</th>
+                  <th class="p-1.5 text-center">Estado</th>
+                  <th class="p-1.5">Validado Por</th>
+                  <th class="p-1.5 text-center">Acción</th>
                 </tr>
               </thead>
               <tbody id="receptions-table-body">
@@ -271,7 +296,7 @@
           </div>
 
           <!-- Modal Carga Vigilador -->
-          <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6">
+          <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Registro de Remito Físico (Vigilancia / Operativa)</h3>
               <button onclick="closeNewReceptionModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
@@ -535,6 +560,8 @@
       const selectLimp = document.getElementById('limpieza-select');
       const selectSeg = document.getElementById('seguridad-select');
       const selectRecSeg = document.getElementById('rec-seguridad-select');
+      const selectFilterSeg = document.getElementById('rec-staff-filter');
+
       if (!buildingId) return;
 
       const { data } = await supabaseClient
@@ -558,10 +585,16 @@
 
         selectSeg.innerHTML = segOptions;
         if (selectRecSeg) selectRecSeg.innerHTML = segOptions;
+
+        if (selectFilterSeg) {
+          selectFilterSeg.innerHTML = '<option value="ALL">Todo el Personal</option>' +
+            segStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('');
+        }
       } else {
         selectLimp.innerHTML = '<option value="">Sin personal activo registrado</option>';
         selectSeg.innerHTML = '<option value="">Sin personal activo registrado</option>';
         if (selectRecSeg) selectRecSeg.innerHTML = '<option value="">Sin personal activo registrado</option>';
+        if (selectFilterSeg) selectFilterSeg.innerHTML = '<option value="ALL">Todo el Personal</option>';
       }
     }
 
@@ -700,17 +733,14 @@
       const tbody = document.getElementById('audit-table-body');
       let query = supabaseClient.from('audit_log').select('*').eq('building_id', buildingId);
 
-      // Filtro de Acción (Consumo o Ingreso de Remito Aprobado)
       if (actionFilter !== 'ALL') {
         query = query.eq('action', actionFilter);
       }
 
-      // Filtro de Producto
       if (prodFilter !== 'ALL') {
         query = query.eq('product_id', prodFilter);
       }
 
-      // Filtro por Mes
       if (monthFilter) {
         const startDate = `${monthFilter}-01T00:00:00`;
         const endDate = `${monthFilter}-31T23:59:59`;
@@ -755,6 +785,85 @@
       document.getElementById('audit-prod-filter').value = 'ALL';
       document.getElementById('audit-month-filter').value = '';
       loadAuditLog();
+    }
+
+    async function loadRecepciones() {
+      const buildingId = document.getElementById('branch-select').value;
+      const statusFilter = document.getElementById('rec-status-filter')?.value || 'ALL';
+      const staffFilter = document.getElementById('rec-staff-filter')?.value || 'ALL';
+      const monthFilter = document.getElementById('rec-month-filter')?.value || '';
+
+      if (!buildingId) return;
+
+      const tbody = document.getElementById('receptions-table-body');
+      let query = supabaseClient.from('recepciones').select('*').eq('building_id', buildingId);
+
+      if (statusFilter !== 'ALL') {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (staffFilter !== 'ALL') {
+        query = query.ilike('registered_by', `%${staffFilter}%`);
+      }
+
+      if (monthFilter) {
+        const startDate = `${monthFilter}-01T00:00:00`;
+        const endDate = `${monthFilter}-31T23:59:59`;
+        query = query.gte('created_at', startDate).lte('created_at', endDate);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(60);
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-red-600 text-center">Error al cargar recepciones: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-gray-500 text-center">No hay remitos de recepción registrados con los filtros seleccionados.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(r => {
+        const dateFormatted = new Date(r.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        
+        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">PENDIENTE VALIDACION</span>`;
+        if (r.status === 'VALIDADO') {
+          statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">VALIDADO E IMPACTADO</span>`;
+        } else if (r.status === 'RECHAZADO') {
+          statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[9px]">RECHAZADO</span>`;
+        }
+
+        // Formatear display del registrante mostrando solo el Nombre de Seguridad sin correo técnico
+        let registeredDisplay = r.registered_by;
+        if (registeredDisplay.includes('(') && registeredDisplay.includes(')')) {
+          registeredDisplay = registeredDisplay.substring(registeredDisplay.indexOf('(') + 1, registeredDisplay.indexOf(')'));
+        }
+
+        let actionBtn = '-';
+        if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'JEFE' || currentUserRole === 'COORDINADOR') && r.status === 'PENDIENTE_VALIDACION') {
+          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${registeredDisplay}', '${(r.notes || '').replace(/'/g, "\\'")}')" class="bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar (RN-006)</button>`;
+        }
+
+        return `
+          <tr class="border-b hover:bg-gray-100 text-[11px]">
+            <td class="p-1.5 font-bold">#${r.id}</td>
+            <td class="p-1.5 font-mono text-[10px] text-slate-700">${dateFormatted}</td>
+            <td class="p-1.5 font-mono font-bold text-slate-800">${r.supplier_remito}</td>
+            <td class="p-1.5 text-gray-700 font-semibold">${registeredDisplay}</td>
+            <td class="p-1.5 text-center">${statusBadge}</td>
+            <td class="p-1.5 text-gray-500">${r.validated_by || 'Pendiente'}</td>
+            <td class="p-1.5 text-center">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function clearRecFilters() {
+      if (document.getElementById('rec-status-filter')) document.getElementById('rec-status-filter').value = 'ALL';
+      if (document.getElementById('rec-staff-filter')) document.getElementById('rec-staff-filter').value = 'ALL';
+      if (document.getElementById('rec-month-filter')) document.getElementById('rec-month-filter').value = '';
+      loadRecepciones();
     }
 
     async function loadStaffTable() {
@@ -890,56 +999,6 @@
         loadAuditLog();
       }
       btn.disabled = false;
-    }
-
-    async function loadRecepciones() {
-      const buildingId = document.getElementById('branch-select').value;
-      if (!buildingId) return;
-
-      const tbody = document.getElementById('receptions-table-body');
-      const { data, error } = await supabaseClient
-        .from('recepciones')
-        .select('*')
-        .eq('building_id', buildingId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-red-600 text-center">Error al cargar recepciones: ${error.message}</td></tr>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-gray-500 text-center">No hay remitos de recepción registrados en esta sucursal.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = data.map(r => {
-        const dateFormatted = new Date(r.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
-        
-        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">PENDIENTE VALIDACION</span>`;
-        if (r.status === 'VALIDADO') {
-          statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">VALIDADO E IMPACTADO</span>`;
-        } else if (r.status === 'RECHAZADO') {
-          statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">RECHAZADO</span>`;
-        }
-
-        let actionBtn = '-';
-        if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'JEFE' || currentUserRole === 'COORDINADOR') && r.status === 'PENDIENTE_VALIDACION') {
-          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${r.registered_by}', '${(r.notes || '').replace(/'/g, "\\'")}')" class="bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar (RN-006)</button>`;
-        }
-
-        return `
-          <tr class="border-b hover:bg-gray-100 text-xs">
-            <td class="p-2 font-bold">#${r.id}</td>
-            <td class="p-2 font-mono text-[11px]">${dateFormatted}</td>
-            <td class="p-2 font-mono font-bold text-slate-800">${r.supplier_remito}</td>
-            <td class="p-2 text-gray-500">${r.registered_by}</td>
-            <td class="p-2">${statusBadge}</td>
-            <td class="p-2 text-gray-500">${r.validated_by || 'Pendiente'}</td>
-            <td class="p-2">${actionBtn}</td>
-          </tr>
-        `;
-      }).join('');
     }
 
     function openNewReceptionModal() {
