@@ -55,7 +55,6 @@
             <span id="user-role-badge" class="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded uppercase"></span>
           </div>
           
-          <!-- Selector Multidepósito Dinámico -->
           <div class="text-right">
             <label class="block text-xs font-bold text-gray-600 mb-1">Sucursal / Depósito:</label>
             <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders(); loadRecepciones();" class="p-2 border rounded text-xs bg-slate-50 font-semibold disabled:bg-gray-200 disabled:text-gray-600">
@@ -75,7 +74,7 @@
           <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada</button>
         </div>
 
-        <!-- Sección 1: Vista Operativa (Consumo Directo) -->
+        <!-- Vista Operativa -->
         <div id="view-operational">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="md:col-span-2">
@@ -144,12 +143,12 @@
           </div>
         </div>
 
-        <!-- Sección 2: Módulo de Recepciones (Fase 2 - RN-006) -->
+        <!-- Módulo de Recepciones (Fase 2 - RN-006) -->
         <div id="view-receptions" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
-              <p class="text-xs text-gray-500">El Vigilador carga la recepción física. El Intendente aprueba y valida para impactar el incremento de stock.</p>
+              <p class="text-xs text-gray-500">El Vigilador carga la recepción física. El Intendente audita el detalle para aprobar (total/parcial) o rechazar.</p>
             </div>
             <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Recepción Física (Vigilador)</button>
           </div>
@@ -164,7 +163,7 @@
                   <th class="p-2.5">Registrado Por</th>
                   <th class="p-2.5">Estado</th>
                   <th class="p-2.5">Validado Por</th>
-                  <th class="p-2.5">Acción (Intendencia)</th>
+                  <th class="p-2.5">Acción de Supervisión</th>
                 </tr>
               </thead>
               <tbody id="receptions-table-body">
@@ -173,8 +172,8 @@
             </table>
           </div>
 
-          <!-- Formulario Modal Nueva Recepción -->
-          <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
+          <!-- Modal Carga Vigilador -->
+          <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Registro de Remito Físico (Vigilancia / Operativa)</h3>
               <button onclick="closeNewReceptionModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
@@ -199,9 +198,33 @@
               <button onclick="submitReception()" class="bg-blue-700 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-blue-800">Guardar Recepción (Pendiente de Validación)</button>
             </div>
           </div>
+
+          <!-- Modal Auditoría / Validación Intendencia -->
+          <div id="reception-audit-panel" class="hidden bg-slate-100 p-5 rounded border border-blue-300 mb-6 shadow-sm">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <div>
+                <h3 class="text-sm font-bold text-slate-800" id="audit-rec-title">Auditoría de Recepción de Remito</h3>
+                <p class="text-[11px] text-gray-600" id="audit-rec-subtitle"></p>
+              </div>
+              <button onclick="closeAuditModal()" class="text-xs text-gray-500 font-bold hover:text-gray-800">Cerrar [X]</button>
+            </div>
+
+            <div class="mb-4">
+              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos (Verificar o Ajustar Cantidades):</h4>
+              <div id="audit-rec-items" class="space-y-2"></div>
+            </div>
+
+            <div class="flex justify-between items-center border-t pt-3">
+              <button onclick="rechazarRecepcionAction()" class="bg-red-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-red-700">✖ Rechazar Recepción</button>
+              <div class="space-x-2">
+                <button onclick="closeAuditModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
+                <button onclick="confirmarValidacionIntendencia()" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">✔ Aprobar e Impactar en Stock (RN-006)</button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Sección 3: Pedidos Mensuales -->
+        <!-- Pedidos Mensuales -->
         <div id="view-orders" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -272,7 +295,7 @@
           </div>
         </div>
 
-        <!-- Sección 4: Módulo de Usuarios -->
+        <!-- Usuarios -->
         <div id="view-users" class="hidden">
           <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
@@ -292,7 +315,7 @@
           </div>
         </div>
 
-        <!-- Sección 5: Vista Consolidada -->
+        <!-- Vista Consolidada -->
         <div id="view-consolidated" class="hidden">
           <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
@@ -318,6 +341,7 @@
     let globalProducts = [];
     let globalPrices = {};
     let currentBranchStock = {};
+    let activeAuditRecId = null;
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -617,11 +641,13 @@
         let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">PENDIENTE VALIDACION</span>`;
         if (r.status === 'VALIDADO') {
           statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">VALIDADO E IMPACTADO</span>`;
+        } else if (r.status === 'RECHAZADO') {
+          statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">RECHAZADO</span>`;
         }
 
         let actionBtn = '-';
         if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'JEFE' || currentUserRole === 'COORDINADOR') && r.status === 'PENDIENTE_VALIDACION') {
-          actionBtn = `<button onclick="validarRecepcionIntendencia(${r.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar y Validar Stock (RN-006)</button>`;
+          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${r.registered_by}', '${r.notes || ''}')" class="bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar (RN-006)</button>`;
         }
 
         return `
@@ -658,6 +684,93 @@
 
     function closeNewReceptionModal() {
       document.getElementById('reception-form-panel').classList.add('hidden');
+    }
+
+    async function openAuditModal(recId, remito, registeredBy, notes) {
+      activeAuditRecId = recId;
+      const panel = document.getElementById('reception-audit-panel');
+      const title = document.getElementById('audit-rec-title');
+      const subtitle = document.getElementById('audit-rec-subtitle');
+      const itemsContainer = document.getElementById('audit-rec-items');
+
+      title.textContent = `Auditoría de Recepción #${recId} - Remito N°: ${remito}`;
+      subtitle.textContent = `Registrado por Vigilancia: ${registeredBy} | Observaciones: ${notes || 'Sin observaciones'}`;
+
+      const { data: details, error } = await supabaseClient
+        .from('recepciones_detalle')
+        .select('*')
+        .eq('recepcion_id', recId);
+
+      if (error || !details) return alert('Error al cargar detalle del remito.');
+
+      itemsContainer.innerHTML = details.map(d => {
+        const prodName = d.product_id.replace(/-/g, ' ');
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-white rounded border border-gray-300 text-xs">
+            <div>
+              <span class="font-bold text-slate-800 capitalize block">${prodName}</span>
+              <span class="text-[10px] text-gray-500">Insumo en Remito</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-bold text-slate-700">Cantidad Aprobada:</label>
+              <input type="number" id="audit-qty-${d.id}" data-detail-id="${d.id}" min="0" value="${d.qty_received}" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      panel.classList.remove('hidden');
+    }
+
+    function closeAuditModal() {
+      document.getElementById('reception-audit-panel').classList.add('hidden');
+      activeAuditRecId = null;
+    }
+
+    async function confirmarValidacionIntendencia() {
+      if (!activeAuditRecId) return;
+
+      const inputs = document.querySelectorAll('[id^="audit-qty-"]');
+      for (let input of inputs) {
+        const detailId = input.getAttribute('data-detail-id');
+        const newQty = parseInt(input.value) || 0;
+        await supabaseClient.from('recepciones_detalle').update({ qty_received: newQty }).eq('id', detailId);
+      }
+
+      const { data, error } = await supabaseClient.rpc('validar_recepcion', {
+        p_recepcion_id: activeAuditRecId,
+        p_validated_by: currentUser.email
+      });
+
+      if (error) {
+        alert(`Error al validar: ${error.message}`);
+      } else {
+        alert('Recepción auditada y validada correctamente. El stock ha sido incrementado.');
+        closeAuditModal();
+        loadRecepciones();
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+    }
+
+    async function rechazarRecepcionAction() {
+      if (!activeAuditRecId) return;
+      const reason = prompt('Por favor ingresa la razón o justificación del rechazo del remito:');
+      if (!reason) return;
+
+      const { data, error } = await supabaseClient.rpc('rechazar_recepcion', {
+        p_recepcion_id: activeAuditRecId,
+        p_validated_by: currentUser.email,
+        p_reason: reason
+      });
+
+      if (error) {
+        alert(`Error al rechazar: ${error.message}`);
+      } else {
+        alert('Recepción rechazada correctamente. No se ha modificado el stock.');
+        closeAuditModal();
+        loadRecepciones();
+      }
     }
 
     async function submitReception() {
@@ -698,24 +811,6 @@
       alert('Recepción registrada con éxito. Estado: PENDIENTE DE VALIDACIÓN POR INTENDENCIA (RN-006).');
       closeNewReceptionModal();
       loadRecepciones();
-    }
-
-    async function validarRecepcionIntendencia(recepcionId) {
-      if (!confirm('¿Confirmas que verificaste el remito y la cantidad física? Al aprobar, el stock de esta sucursal se incrementará automáticamente.')) return;
-
-      const { data, error } = await supabaseClient.rpc('validar_recepcion', {
-        p_recepcion_id: recepcionId,
-        p_validated_by: currentUser.email
-      });
-
-      if (error) {
-        alert(`Error al validar la recepción: ${error.message}`);
-      } else {
-        alert('Recepción validada con éxito. El stock de la sucursal ha sido actualizado.');
-        loadRecepciones();
-        loadStockAndPrices();
-        loadAuditLog();
-      }
     }
 
     async function handleConsume(e) {
