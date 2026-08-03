@@ -379,11 +379,11 @@
           <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
             <div>
               <h2 class="text-base font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
-              <p class="text-[11px] text-gray-500">Confección y consulta de pedidos con Sugerido Inteligente a 1.5 meses de Cobertura (RN-007).</p>
+              <p class="text-[11px] text-gray-500">Confección y consulta de pedidos con Sugerido Inteligente a 1.5 meses de Cobertura (RN-007)[cite: 1].</p>
             </div>
             <div class="flex gap-2">
               <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800 hidden">
-                📦 Consolidar Pedidos Argentina (RN-011)
+                📦 Consolidar Pedidos Argentina (RN-011)[cite: 1]
               </button>
               <button id="btn-create-order" onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">
                 + Confeccionar Pedido Mensual (Intendente)
@@ -478,8 +478,8 @@
         <div id="view-inventories" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
-              <h2 class="text-base font-bold text-slate-800">Módulo de Inventarios Físicos y Ajustes (EO-005)</h2>
-              <p class="text-[11px] text-gray-500">Los ajustes con diferencia requieren motivo obligatorio y aprobación de Coordinación.</p>
+              <h2 class="text-base font-bold text-slate-800">Módulo de Inventarios Físicos y Ajustes (EO-005)[cite: 1]</h2>
+              <p class="text-[11px] text-gray-500">Los ajustes con diferencia requieren motivo obligatorio y aprobación de Coordinación[cite: 1].</p>
             </div>
             <button onclick="openNewInventoryModal()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">+ Realizar Conteo Físico</button>
           </div>
@@ -522,7 +522,7 @@
         <div id="view-transferencias" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
-              <h2 class="text-base font-bold text-slate-800">Módulo de Transferencias entre Sucursales (RN-009)</h2>
+              <h2 class="text-base font-bold text-slate-800">Módulo de Transferencias entre Sucursales (RN-009)[cite: 1]</h2>
               <p class="text-[11px] text-gray-500">Solicitudes con validación de Sobrestock en Origen y Destino.</p>
             </div>
             <button onclick="openNewTransferModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">+ Solicitar Transferencia</button>
@@ -590,7 +590,7 @@
 
         <!-- Usuarios -->
         <div id="view-users" class="hidden" style="display: none;">
-          <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)</h2>
+          <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)[cite: 1]</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
             <table class="w-full text-left text-xs text-gray-600">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
@@ -1537,7 +1537,7 @@
       const detailsWithId = itemsToInsert.map(item => ({ ...item, recepcion_id: recData.id }));
       await supabaseClient.from('recepciones_detalle').insert(detailsWithId);
 
-      alert('Recepción registrada con éxito. Estado: PENDIENTE DE VALIDACIÓN POR INTENDENCIA (RN-006).');
+      alert('Recepción registrada con éxito. Estado: PENDIENTE DE VALIDACIÓN POR INTENDENCIA (RN-006)[cite: 1].');
       closeNewReceptionModal();
       loadRecepciones();
     }
@@ -1601,7 +1601,7 @@
       if (error) {
         alert(`Error al validar: ${error.message}`);
       } else {
-        alert('Recepción auditada y validada correctamente. El stock ha sido incrementado.');
+        alert('Recepción auditada y validada correctamente. El stock ha sido incrementado[cite: 1].');
         closeAuditModal();
         loadRecepciones();
         loadStockAndPrices();
