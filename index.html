@@ -77,97 +77,115 @@
 
         <!-- Sección 1: Vista Operativa -->
         <div id="view-operational">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <!-- Tabla Compacta de Stock -->
             <div class="md:col-span-2">
-              <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold" id="depot-title">Stock Actual</h2>
+              <div class="flex justify-between items-center mb-2">
+                <h2 class="text-base font-bold" id="depot-title">Stock Actual</h2>
                 <div id="total-cost-container" class="hidden text-right">
-                  <span class="text-xs text-gray-500 block">Valorizado Total:</span>
-                  <span id="total-cost-val" class="text-sm font-extrabold text-emerald-700">$0.00</span>
+                  <span class="text-[11px] text-gray-500 block">Valorizado Total:</span>
+                  <span id="total-cost-val" class="text-xs font-extrabold text-emerald-700">$0.00</span>
                 </div>
               </div>
-              <div class="overflow-x-auto bg-gray-50 rounded border max-h-80 overflow-y-auto">
+              <div class="overflow-x-auto bg-gray-50 rounded border max-h-72 overflow-y-auto shadow-sm">
                 <table class="w-full text-left text-xs text-gray-600">
                   <thead class="bg-slate-200 text-slate-800 uppercase text-[10px] sticky top-0">
                     <tr>
-                      <th class="p-2">Producto / Insumo</th>
-                      <th class="p-2 text-center">Disponible</th>
-                      <th class="p-2 text-center">Estado</th>
-                      <th id="th-cost-col" class="p-2 text-right hidden">Costo Total</th>
+                      <th class="p-1.5">Producto / Insumo</th>
+                      <th class="p-1.5 text-center">Disponible</th>
+                      <th class="p-1.5 text-center">Estado</th>
+                      <th id="th-cost-col" class="p-1.5 text-right hidden">Costo Total</th>
                     </tr>
                   </thead>
                   <tbody id="stock-table-body">
-                    <tr><td colspan="4" class="p-3 text-center text-gray-500">Cargando datos en tiempo real...</td></tr>
+                    <tr><td colspan="4" class="p-2 text-center text-gray-500">Cargando datos en tiempo real...</td></tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
             <!-- Formulario de Consumo Diario -->
-            <div class="bg-gray-50 p-4 rounded border h-fit">
-              <h3 class="text-xs font-bold text-slate-800 border-b pb-2 mb-3">Registro de Consumo Diario (RN-001)</h3>
-              <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
+            <div class="bg-gray-50 p-3 rounded border h-fit shadow-sm">
+              <h3 class="text-xs font-bold text-slate-800 border-b pb-1.5 mb-2">Registro de Consumo Diario (RN-001)</h3>
+              <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-2">
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Producto</label>
-                  <select id="product-select" onchange="validateConsumeQty()" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <label class="block text-[11px] font-bold text-gray-700">Producto</label>
+                  <select id="product-select" onchange="validateConsumeQty()" class="w-full p-1.5 border rounded text-xs bg-white" required>
                     <option value="">Seleccione insumo...</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Cantidad a retirar</label>
-                  <input type="number" id="qty-input" min="1" oninput="validateConsumeQty()" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 5">
-                  <span id="qty-avail-msg" class="text-[10px] text-gray-500 mt-1 block"></span>
+                  <label class="block text-[11px] font-bold text-gray-700">Cantidad a retirar</label>
+                  <input type="number" id="qty-input" min="1" oninput="validateConsumeQty()" class="w-full p-1.5 border rounded text-xs" required placeholder="Ej: 5">
+                  <span id="qty-avail-msg" class="text-[10px] text-gray-500 block"></span>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Personal que Retira (Limpieza)</label>
-                  <select id="limpieza-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <label class="block text-[11px] font-bold text-gray-700">Personal que Retira (Limpieza)</label>
+                  <select id="limpieza-select" class="w-full p-1.5 border rounded text-xs bg-white" required>
                     <option value="">Seleccione personal de limpieza...</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Personal que Informa (Seguridad)</label>
-                  <select id="seguridad-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <label class="block text-[11px] font-bold text-gray-700">Personal que Informa (Seguridad)</label>
+                  <select id="seguridad-select" class="w-full p-1.5 border rounded text-xs bg-white" required>
                     <option value="">Seleccione personal de seguridad...</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
-                  <input type="text" id="note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
+                  <label class="block text-[11px] font-bold text-gray-700">Observación / Nota</label>
+                  <input type="text" id="note-input" class="w-full p-1.5 border rounded text-xs" placeholder="Opcional">
                 </div>
-                <button type="submit" id="btn-submit-consume" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
+                <button type="submit" id="btn-submit-consume" class="w-full bg-emerald-600 text-white py-1.5 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
               </form>
-              <div id="form-msg" class="mt-3 text-xs p-2 rounded hidden"></div>
+              <div id="form-msg" class="mt-2 text-xs p-1.5 rounded hidden"></div>
             </div>
           </div>
 
-          <!-- Auditoría -->
-          <div class="border-t pt-6">
-            <div class="flex justify-between items-center mb-3">
+          <!-- Auditoría con Tabla Compacta y Filtros Combinados -->
+          <div class="border-t pt-4">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
               <div>
-                <h2 class="text-lg font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
-                <p class="text-xs text-gray-500">Consulta de movimientos con filtro mensual de trazabilidad.</p>
+                <h2 class="text-base font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
+                <p class="text-[11px] text-gray-500">Muestra exclusivamente consumos e ingresos confirmados.</p>
               </div>
-              <div class="flex items-center gap-2">
-                <label class="text-xs font-bold text-gray-600">Filtrar por Mes:</label>
-                <input type="month" id="audit-month-filter" onchange="loadAuditLog()" class="p-1.5 border rounded text-xs bg-white">
-                <button onclick="clearAuditFilter()" class="bg-gray-200 text-gray-700 px-2 py-1.5 rounded text-xs font-semibold">Ver Todo</button>
-                <button id="btn-export-csv" onclick="exportAuditCSV()" class="bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-800 hidden">📥 Exportar CSV</button>
+
+              <!-- Filtros Avanzados -->
+              <div class="flex flex-wrap items-center gap-2">
+                <div>
+                  <select id="audit-action-filter" onchange="loadAuditLog()" class="p-1 border rounded text-xs bg-white">
+                    <option value="ALL">Todas las Acciones</option>
+                    <option value="CONSUMO">Solo Consumos</option>
+                    <option value="INGRESO">Solo Ingresos (Remitos)</option>
+                  </select>
+                </div>
+                <div>
+                  <select id="audit-prod-filter" onchange="loadAuditLog()" class="p-1 border rounded text-xs bg-white">
+                    <option value="ALL">Todos los Productos</option>
+                  </select>
+                </div>
+                <div>
+                  <input type="month" id="audit-month-filter" onchange="loadAuditLog()" class="p-1 border rounded text-xs bg-white">
+                </div>
+                <button onclick="clearAuditFilter()" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-semibold hover:bg-gray-300">Limpiar</button>
+                <button id="btn-export-csv" onclick="exportAuditCSV()" class="bg-slate-700 text-white px-2.5 py-1 rounded text-xs font-bold hover:bg-slate-800 hidden">📥 CSV</button>
               </div>
             </div>
-            <div class="overflow-x-auto bg-gray-50 rounded border">
-              <table class="w-full text-left text-xs text-gray-600">
-                <thead class="bg-gray-200 text-gray-700 uppercase text-[10px]">
+
+            <!-- Tabla Compacta -->
+            <div class="overflow-x-auto bg-gray-50 rounded border max-h-64 overflow-y-auto shadow-sm">
+              <table class="w-full text-left text-[11px] text-gray-600">
+                <thead class="bg-slate-200 text-slate-800 uppercase text-[9px] sticky top-0">
                   <tr>
-                    <th class="p-2.5">Fecha / Hora</th>
-                    <th class="p-2.5">Acción</th>
-                    <th class="p-2.5">Producto</th>
-                    <th class="p-2.5">Cantidad</th>
-                    <th class="p-2.5">Registrado Por (Vigilador)</th>
-                    <th class="p-2.5">Detalle / Retiró</th>
+                    <th class="p-1.5">Fecha / Hora</th>
+                    <th class="p-1.5 text-center">Acción</th>
+                    <th class="p-1.5">Producto</th>
+                    <th class="p-1.5 text-center">Cant.</th>
+                    <th class="p-1.5">Registrado Por</th>
+                    <th class="p-1.5">Detalle / Personal</th>
                   </tr>
                 </thead>
                 <tbody id="audit-table-body">
-                  <tr><td colspan="6" class="p-3 text-center text-gray-500">Cargando registros...</td></tr>
+                  <tr><td colspan="6" class="p-2 text-center text-gray-500">Cargando registros...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -179,23 +197,23 @@
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Gestión de Personal Operativo (Limpieza y Seguridad)</h2>
-              <p class="text-xs text-gray-500">Administración de la nómina autorizada para retiros e informes de insumos en esta sucursal.</p>
+              <p class="text-xs text-gray-500">Administración de la nómina autorizada para esta sucursal.</p>
             </div>
-            <button onclick="openStaffModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">+ Registrar Nuevo Personal</button>
+            <button onclick="openStaffModal()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">+ Registrar Nuevo Personal</button>
           </div>
 
           <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
             <table class="w-full text-left text-xs text-gray-600">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
                 <tr>
-                  <th class="p-2.5">Nombre Completo</th>
-                  <th class="p-2.5">Función / Área</th>
-                  <th class="p-2.5">Estado</th>
-                  <th class="p-2.5">Acción</th>
+                  <th class="p-2">Nombre Completo</th>
+                  <th class="p-2">Función / Área</th>
+                  <th class="p-2">Estado</th>
+                  <th class="p-2">Acción</th>
                 </tr>
               </thead>
               <tbody id="staff-table-body">
-                <tr><td colspan="4" class="p-3 text-center text-gray-500">Cargando nómina de personal...</td></tr>
+                <tr><td colspan="4" class="p-2 text-center text-gray-500">Cargando nómina de personal...</td></tr>
               </tbody>
             </table>
           </div>
@@ -228,26 +246,26 @@
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
-              <p class="text-xs text-gray-500">El Vigilador carga la recepción física del remito. El Intendente audita y aprueba.</p>
+              <p class="text-xs text-gray-500">El Vigilador carga el remito físico. El Intendente audita y aprueba.</p>
             </div>
-            <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Recepción Física (Vigilador)</button>
+            <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Recepción Física (Vigilador)</button>
           </div>
 
           <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
             <table class="w-full text-left text-xs text-gray-600">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
                 <tr>
-                  <th class="p-2.5">ID</th>
-                  <th class="p-2.5">Fecha</th>
-                  <th class="p-2.5">N° Remito Proveedor</th>
-                  <th class="p-2.5">Registrado Por</th>
-                  <th class="p-2.5">Estado</th>
-                  <th class="p-2.5">Validado Por</th>
-                  <th class="p-2.5">Acción</th>
+                  <th class="p-2">ID</th>
+                  <th class="p-2">Fecha</th>
+                  <th class="p-2">N° Remito Proveedor</th>
+                  <th class="p-2">Registrado Por</th>
+                  <th class="p-2">Estado</th>
+                  <th class="p-2">Validado Por</th>
+                  <th class="p-2">Acción</th>
                 </tr>
               </thead>
               <tbody id="receptions-table-body">
-                <tr><td colspan="7" class="p-3 text-center text-gray-500">Cargando recepciones...</td></tr>
+                <tr><td colspan="7" class="p-2 text-center text-gray-500">Cargando recepciones...</td></tr>
               </tbody>
             </table>
           </div>
@@ -277,7 +295,7 @@
             </div>
 
             <h4 class="text-xs font-bold text-gray-700 mb-2">Conteo Físico de Insumos Recibidos:</h4>
-            <div id="reception-items-list" class="space-y-2 mb-4"></div>
+            <div id="reception-items-list" class="space-y-1.5 mb-4 max-h-60 overflow-y-auto"></div>
 
             <div class="flex justify-end space-x-2 border-t pt-3">
               <button onclick="closeNewReceptionModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
@@ -286,7 +304,7 @@
           </div>
 
           <!-- Modal Auditoría Intendencia -->
-          <div id="reception-audit-panel" class="hidden bg-slate-100 p-5 rounded border border-blue-300 mb-6 shadow-sm">
+          <div id="reception-audit-panel" class="hidden bg-slate-100 p-4 rounded border border-blue-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <div>
                 <h3 class="text-sm font-bold text-slate-800" id="audit-rec-title">Auditoría de Recepción de Remito</h3>
@@ -296,15 +314,15 @@
             </div>
 
             <div class="mb-4">
-              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos (Verificar / Corregir Cantidades):</h4>
-              <div id="audit-rec-items" class="space-y-2"></div>
+              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos:</h4>
+              <div id="audit-rec-items" class="space-y-1.5"></div>
             </div>
 
             <div class="flex justify-between items-center border-t pt-3">
-              <button onclick="rechazarRecepcionAction()" class="bg-red-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-red-700">✖ Rechazar Recepción</button>
+              <button onclick="rechazarRecepcionAction()" class="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700">✖ Rechazar Recepción</button>
               <div class="space-x-2">
                 <button onclick="closeAuditModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
-                <button onclick="confirmarValidacionIntendencia()" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">✔ Aprobar e Impactar en Stock (RN-006)</button>
+                <button onclick="confirmarValidacionIntendencia()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">✔ Aprobar e Impactar en Stock (RN-006)</button>
               </div>
             </div>
           </div>
@@ -315,7 +333,7 @@
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
-              <p class="text-xs text-gray-500">Supervisión y flujo de aprobación de la reposición periódica de insumos.</p>
+              <p class="text-xs text-gray-500">Supervisión y flujo de aprobación de reposición.</p>
             </div>
             <div class="flex gap-2">
               <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800 hidden">
@@ -331,18 +349,18 @@
             <table class="w-full text-left text-xs text-gray-600">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
                 <tr>
-                  <th class="p-2.5">ID</th>
-                  <th class="p-2.5">Período</th>
-                  <th class="p-2.5">Sucursal</th>
-                  <th class="p-2.5">Estado</th>
-                  <th class="p-2.5">Costo Estimado</th>
-                  <th class="p-2.5">Solicitado Por</th>
-                  <th class="p-2.5">Aprobado / Derivado Por</th>
-                  <th class="p-2.5">Acción</th>
+                  <th class="p-2">ID</th>
+                  <th class="p-2">Período</th>
+                  <th class="p-2">Sucursal</th>
+                  <th class="p-2">Estado</th>
+                  <th class="p-2">Costo Estimado</th>
+                  <th class="p-2">Solicitado Por</th>
+                  <th class="p-2">Aprobado / Derivado Por</th>
+                  <th class="p-2">Acción</th>
                 </tr>
               </thead>
               <tbody id="orders-table-body">
-                <tr><td colspan="8" class="p-3 text-center text-gray-500">Cargando historial de pedidos...</td></tr>
+                <tr><td colspan="8" class="p-2 text-center text-gray-500">Cargando historial de pedidos...</td></tr>
               </tbody>
             </table>
           </div>
@@ -355,14 +373,14 @@
             <table class="w-full text-left text-xs text-gray-600">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
                 <tr>
-                  <th class="p-2.5">Email / Usuario</th>
-                  <th class="p-2.5">Rol Funcional</th>
-                  <th class="p-2.5">Sucursal Asignada</th>
-                  <th class="p-2.5">Estado</th>
+                  <th class="p-2">Email / Usuario</th>
+                  <th class="p-2">Rol Funcional</th>
+                  <th class="p-2">Sucursal Asignada</th>
+                  <th class="p-2">Estado</th>
                 </tr>
               </thead>
               <tbody id="users-table-body">
-                <tr><td colspan="4" class="p-3 text-center text-gray-500">Cargando usuarios...</td></tr>
+                <tr><td colspan="4" class="p-2 text-center text-gray-500">Cargando usuarios...</td></tr>
               </tbody>
             </table>
           </div>
@@ -375,7 +393,7 @@
             <table class="w-full text-left text-xs text-gray-600" id="consolidated-table">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]" id="consolidated-thead"></thead>
               <tbody id="consolidated-tbody">
-                <tr><td class="p-3 text-center text-gray-500">Cargando matriz de stock...</td></tr>
+                <tr><td class="p-2 text-center text-gray-500">Cargando matriz de stock...</td></tr>
               </tbody>
             </table>
           </div>
@@ -461,12 +479,10 @@
       const isSupervisor = (currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE' || currentUserRole === 'CONTROLLER');
       const isIntendente = (currentUserRole === 'INTENDENTE');
 
-      // Pestañas
       document.getElementById('view-cons-btn').style.display = isSupervisor ? 'inline-block' : 'none';
       document.getElementById('view-orders-btn').style.display = (isIntendente || isSupervisor) ? 'inline-block' : 'none';
       document.getElementById('view-users-btn').style.display = (currentUserRole === 'ADMINISTRADOR' || currentUserRole === 'JEFE') ? 'inline-block' : 'none';
 
-      // Botones auxiliares
       document.getElementById('btn-consolidate-ar').classList.toggle('hidden', !isSupervisor);
       document.getElementById('btn-export-csv').classList.toggle('hidden', !(isIntendente || isSupervisor));
 
@@ -503,6 +519,9 @@
       const { data, error } = await supabaseClient.from('productos').select('id, name').order('name');
       if (!error && data) {
         globalProducts = data;
+        const prodSelect = document.getElementById('audit-prod-filter');
+        prodSelect.innerHTML = '<option value="ALL">Todos los Productos</option>' + 
+          data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
       }
 
       const { data: pricesData } = await supabaseClient.from('precios_insumos').select('product_id, estimated_unit_price');
@@ -592,7 +611,7 @@
       currentBranchStock = {};
 
       if (stockErr) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-red-600 text-center">Error al cargar stock: ${stockErr.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-red-600 text-center">Error al cargar stock: ${stockErr.message}</td></tr>`;
         return;
       }
 
@@ -601,18 +620,18 @@
       let grandTotalCost = 0;
 
       if (!stockData || stockData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-gray-500 text-center">No hay stock registrado en esta sucursal.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-gray-500 text-center">No hay stock registrado en esta sucursal.</td></tr>`;
       } else {
         tbody.innerHTML = stockData.map(item => {
           currentBranchStock[item.product_id] = item.qty;
           const nameFormatted = item.product_id.replace(/-/g, ' ');
           selectConsume.innerHTML += `<option value="${item.product_id}">${nameFormatted} (Disponible: ${item.qty})</option>`;
           
-          let alertBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Normal</span>`;
+          let alertBadge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded">Normal</span>`;
           if (item.qty <= 10) {
-            alertBadge = `<span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded">Stock Crítico</span>`;
+            alertBadge = `<span class="bg-red-100 text-red-700 text-[9px] font-bold px-1.5 py-0.5 rounded">Stock Crítico</span>`;
           } else if (item.qty >= 200) {
-            alertBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">Sobrestock</span>`;
+            alertBadge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded">Sobrestock</span>`;
           }
 
           let priceTd = '';
@@ -620,14 +639,14 @@
             const unitPrice = globalPrices[item.product_id] || 0;
             const totalItemCost = unitPrice * item.qty;
             grandTotalCost += totalItemCost;
-            priceTd = `<td class="p-2 text-right font-semibold text-slate-700">$${totalItemCost.toFixed(2)}</td>`;
+            priceTd = `<td class="p-1.5 text-right font-semibold text-slate-700">$${totalItemCost.toFixed(2)}</td>`;
           }
 
           return `
-            <tr class="border-b hover:bg-gray-100 text-xs">
-              <td class="p-2 font-medium capitalize text-slate-800">${nameFormatted}</td>
-              <td class="p-2 text-center font-extrabold text-slate-800">${item.qty} u</td>
-              <td class="p-2 text-center">${alertBadge}</td>
+            <tr class="border-b hover:bg-gray-100 text-[11px]">
+              <td class="p-1.5 font-medium capitalize text-slate-800">${nameFormatted}</td>
+              <td class="p-1.5 text-center font-extrabold text-slate-800">${item.qty} u</td>
+              <td class="p-1.5 text-center">${alertBadge}</td>
               ${priceTd}
             </tr>
           `;
@@ -661,63 +680,79 @@
 
       if (entered > available) {
         msgSpan.textContent = `❌ Excede el disponible (${available} u)`;
-        msgSpan.className = 'text-[10px] text-red-600 font-bold mt-1 block';
+        msgSpan.className = 'text-[10px] text-red-600 font-bold block';
         btnSubmit.disabled = true;
       } else {
         msgSpan.textContent = `Disponible en stock: ${available} u`;
-        msgSpan.className = 'text-[10px] text-emerald-700 font-semibold mt-1 block';
+        msgSpan.className = 'text-[10px] text-emerald-700 font-semibold block';
         btnSubmit.disabled = false;
       }
     }
 
     async function loadAuditLog() {
       const buildingId = document.getElementById('branch-select').value;
+      const actionFilter = document.getElementById('audit-action-filter').value;
+      const prodFilter = document.getElementById('audit-prod-filter').value;
       const monthFilter = document.getElementById('audit-month-filter').value;
+
       if (!buildingId) return;
 
       const tbody = document.getElementById('audit-table-body');
       let query = supabaseClient.from('audit_log').select('*').eq('building_id', buildingId);
 
+      // Filtro de Acción (Consumo o Ingreso de Remito Aprobado)
+      if (actionFilter !== 'ALL') {
+        query = query.eq('action', actionFilter);
+      }
+
+      // Filtro de Producto
+      if (prodFilter !== 'ALL') {
+        query = query.eq('product_id', prodFilter);
+      }
+
+      // Filtro por Mes
       if (monthFilter) {
         const startDate = `${monthFilter}-01T00:00:00`;
         const endDate = `${monthFilter}-31T23:59:59`;
         query = query.gte('created_at', startDate).lte('created_at', endDate);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(60);
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-red-600 text-center">Error al cargar auditoría: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-2 text-red-600 text-center">Error al cargar auditoría: ${error.message}</td></tr>`;
         return;
       }
 
       currentAuditData = data || [];
 
       if (currentAuditData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-gray-500 text-center">No hay movimientos registrados para el filtro seleccionado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-2 text-gray-500 text-center">No hay registros con los filtros seleccionados.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = currentAuditData.map(row => {
         const dateFormatted = new Date(row.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
         const actionBadge = row.action === 'INGRESO'
-          ? `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">INGRESO</span>`
-          : `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">CONSUMO</span>`;
+          ? `<span class="bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded text-[9px]">INGRESO</span>`
+          : `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">CONSUMO</span>`;
 
         return `
-          <tr class="border-b hover:bg-gray-100">
-            <td class="p-2.5 font-mono text-[11px]">${dateFormatted}</td>
-            <td class="p-2.5">${actionBadge}</td>
-            <td class="p-2.5 font-medium capitalize">${(row.product_id || '').replace(/-/g, ' ')}</td>
-            <td class="p-2.5 font-bold">${row.qty_changed} u</td>
-            <td class="p-2.5 text-gray-600 font-semibold">${row.registered_by || '-'}</td>
-            <td class="p-2.5 text-gray-500">${row.note || '-'}</td>
+          <tr class="border-b hover:bg-gray-100 text-[11px]">
+            <td class="p-1.5 font-mono text-[10px] text-slate-700">${dateFormatted}</td>
+            <td class="p-1.5 text-center">${actionBadge}</td>
+            <td class="p-1.5 font-semibold text-slate-800 capitalize">${(row.product_id || '').replace(/-/g, ' ')}</td>
+            <td class="p-1.5 text-center font-extrabold text-slate-800">${row.qty_changed} u</td>
+            <td class="p-1.5 text-gray-600 font-medium">${row.registered_by || '-'}</td>
+            <td class="p-1.5 text-gray-500 text-[10px]">${row.note || '-'}</td>
           </tr>
         `;
       }).join('');
     }
 
     function clearAuditFilter() {
+      document.getElementById('audit-action-filter').value = 'ALL';
+      document.getElementById('audit-prod-filter').value = 'ALL';
       document.getElementById('audit-month-filter').value = '';
       loadAuditLog();
     }
@@ -734,12 +769,12 @@
         .order('full_name');
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-red-600 text-center">Error al cargar personal: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-red-600 text-center">Error al cargar personal: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-gray-500 text-center">No hay personal registrado en esta sucursal.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-gray-500 text-center">No hay personal registrado en esta sucursal.</td></tr>`;
         return;
       }
 
@@ -753,11 +788,11 @@
           : `<button onclick="toggleStaffStatus(${s.id}, true)" class="text-emerald-700 font-bold hover:underline">Reactivar</button>`;
 
         return `
-          <tr class="border-b hover:bg-gray-100">
-            <td class="p-2.5 font-semibold text-slate-800">${s.full_name}</td>
-            <td class="p-2.5 font-bold text-gray-600">${s.role_type}</td>
-            <td class="p-2.5">${statusBadge}</td>
-            <td class="p-2.5">${actionBtn}</td>
+          <tr class="border-b hover:bg-gray-100 text-xs">
+            <td class="p-2 font-semibold text-slate-800">${s.full_name}</td>
+            <td class="p-2 font-bold text-gray-600">${s.role_type}</td>
+            <td class="p-2">${statusBadge}</td>
+            <td class="p-2">${actionBtn}</td>
           </tr>
         `;
       }).join('');
@@ -842,11 +877,11 @@
       });
 
       if (error) {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
+        msgDiv.className = 'mt-2 text-xs p-1.5 rounded bg-red-100 text-red-700 border border-red-200';
         msgDiv.textContent = `Error: ${error.message}`;
         msgDiv.classList.remove('hidden');
       } else {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
+        msgDiv.className = 'mt-2 text-xs p-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
         msgDiv.textContent = 'Consumo registrado exitosamente.';
         msgDiv.classList.remove('hidden');
         document.getElementById('consumption-form').reset();
@@ -869,12 +904,12 @@
         .order('created_at', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-red-600 text-center">Error al cargar recepciones: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-red-600 text-center">Error al cargar recepciones: ${error.message}</td></tr>`;
         return;
       }
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-gray-500 text-center">No hay remitos de recepción registrados en esta sucursal.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-gray-500 text-center">No hay remitos de recepción registrados en esta sucursal.</td></tr>`;
         return;
       }
 
@@ -894,14 +929,14 @@
         }
 
         return `
-          <tr class="border-b hover:bg-gray-100">
-            <td class="p-2.5 font-bold">#${r.id}</td>
-            <td class="p-2.5 font-mono text-[11px]">${dateFormatted}</td>
-            <td class="p-2.5 font-mono font-bold text-slate-800">${r.supplier_remito}</td>
-            <td class="p-2.5 text-gray-500">${r.registered_by}</td>
-            <td class="p-2.5">${statusBadge}</td>
-            <td class="p-2.5 text-gray-500">${r.validated_by || 'Pendiente'}</td>
-            <td class="p-2.5">${actionBtn}</td>
+          <tr class="border-b hover:bg-gray-100 text-xs">
+            <td class="p-2 font-bold">#${r.id}</td>
+            <td class="p-2 font-mono text-[11px]">${dateFormatted}</td>
+            <td class="p-2 font-mono font-bold text-slate-800">${r.supplier_remito}</td>
+            <td class="p-2 text-gray-500">${r.registered_by}</td>
+            <td class="p-2">${statusBadge}</td>
+            <td class="p-2 text-gray-500">${r.validated_by || 'Pendiente'}</td>
+            <td class="p-2">${actionBtn}</td>
           </tr>
         `;
       }).join('');
@@ -917,7 +952,7 @@
           <div class="flex items-center justify-between p-2 bg-white rounded border text-xs">
             <span class="font-semibold capitalize">${p.name}</span>
             <div class="flex items-center gap-2">
-              <label class="text-[10px] font-bold text-gray-700">Cantidad Físicamente Contada:</label>
+              <label class="text-[10px] font-bold text-gray-700">Cantidad Contada:</label>
               <input type="number" id="rec-qty-${p.id}" min="0" value="0" class="w-20 p-1 border rounded text-xs text-center font-bold">
             </div>
           </div>
@@ -949,7 +984,7 @@
       itemsContainer.innerHTML = details.map(d => {
         const prodName = d.product_id.replace(/-/g, ' ');
         return `
-          <div class="flex items-center justify-between p-2.5 bg-white rounded border border-gray-300 text-xs">
+          <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-300 text-xs">
             <div>
               <span class="font-bold text-slate-800 capitalize block">${prodName}</span>
               <span class="text-[10px] text-gray-500">Cantidad Declarada en Remito</span>
