@@ -78,6 +78,7 @@
         <!-- Sección 1: Vista Operativa -->
         <div id="view-operational">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Tabla Compacta de Stock -->
             <div class="md:col-span-2">
               <div class="flex justify-between items-center mb-3">
                 <h2 class="text-lg font-bold" id="depot-title">Stock Actual</h2>
@@ -86,11 +87,24 @@
                   <span id="total-cost-val" class="text-sm font-extrabold text-emerald-700">$0.00</span>
                 </div>
               </div>
-              <div id="stock-list" class="space-y-2">
-                <p class="text-xs text-gray-500">Cargando datos en tiempo real...</p>
+              <div class="overflow-x-auto bg-gray-50 rounded border max-h-80 overflow-y-auto">
+                <table class="w-full text-left text-xs text-gray-600">
+                  <thead class="bg-slate-200 text-slate-800 uppercase text-[10px] sticky top-0">
+                    <tr>
+                      <th class="p-2">Producto / Insumo</th>
+                      <th class="p-2 text-center">Disponible</th>
+                      <th class="p-2 text-center">Estado</th>
+                      <th id="th-cost-col" class="p-2 text-right hidden">Costo Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stock-table-body">
+                    <tr><td colspan="4" class="p-3 text-center text-gray-500">Cargando datos en tiempo real...</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
+            <!-- Formulario de Consumo Diario con Doble Selector -->
             <div class="bg-gray-50 p-4 rounded border h-fit">
               <h3 class="text-xs font-bold text-slate-800 border-b pb-2 mb-3">Registro de Consumo Diario (RN-001)</h3>
               <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
@@ -106,9 +120,15 @@
                   <span id="qty-avail-msg" class="text-[10px] text-gray-500 mt-1 block"></span>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-700">Personal que Retira (Limpieza/Seguridad)</label>
-                  <select id="informed-select" class="w-full p-2 border rounded text-xs bg-white" required>
-                    <option value="">Seleccione personal...</option>
+                  <label class="block text-xs font-bold text-gray-700">Personal que Retira (Limpieza)</label>
+                  <select id="limpieza-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                    <option value="">Seleccione personal de limpieza...</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-700">Personal que Informa (Seguridad)</label>
+                  <select id="seguridad-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                    <option value="">Seleccione personal de seguridad...</option>
                   </select>
                 </div>
                 <div>
@@ -121,7 +141,7 @@
             </div>
           </div>
 
-          <!-- Auditoría e Historial de Movimientos -->
+          <!-- Auditoría -->
           <div class="border-t pt-6">
             <div class="flex justify-between items-center mb-3">
               <div>
@@ -155,12 +175,12 @@
           </div>
         </div>
 
-        <!-- Sección 2: Módulo de Personal Operativo (Limpieza / Seguridad) -->
+        <!-- Sección 2: Módulo de Personal Operativo -->
         <div id="view-staff" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Gestión de Personal Operativo (Limpieza y Seguridad)</h2>
-              <p class="text-xs text-gray-500">Administración de la nómina autorizada para retiros de insumos en esta sucursal.</p>
+              <p class="text-xs text-gray-500">Administración de la nómina autorizada para retiros e informes de insumos en esta sucursal.</p>
             </div>
             <button onclick="openStaffModal()" class="bg-emerald-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-emerald-700">+ Registrar Nuevo Personal</button>
           </div>
@@ -181,7 +201,7 @@
             </table>
           </div>
 
-          <!-- Formulario Nuevo Personal -->
+          <!-- Modal Nuevo Personal -->
           <div id="staff-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
             <h3 class="text-sm font-bold text-slate-800 border-b pb-2 mb-3">Alta de Personal Operativo</h3>
             <form onsubmit="handleSaveStaff(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -433,15 +453,17 @@
         ? 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 uppercase'
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
-      // Pestañas por rol
+      // Control Estricto de Visibilidad de Pestañas por Rol
       const isSupervisor = (currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE' || currentUserRole === 'CONTROLLER');
       const isIntendente = (currentUserRole === 'INTENDENTE');
-      const isVigilador = (currentUserRole === 'VIGILADOR');
 
       if (isSupervisor) {
         document.getElementById('view-cons-btn').classList.remove('hidden');
         document.getElementById('btn-consolidate-ar').classList.remove('hidden');
         document.getElementById('btn-export-csv').classList.remove('hidden');
+      } else {
+        document.getElementById('view-cons-btn').classList.add('hidden');
+        document.getElementById('btn-consolidate-ar').classList.add('hidden');
       }
 
       if (isIntendente || isSupervisor) {
@@ -465,7 +487,7 @@
 
     async function onBranchChange() {
       await loadStockAndPrices();
-      await loadStaffSelect();
+      await loadStaffSelects();
       loadAuditLog();
       loadRecepciones();
       loadStaffTable();
@@ -498,9 +520,10 @@
       }
     }
 
-    async function loadStaffSelect() {
+    async function loadStaffSelects() {
       const buildingId = document.getElementById('branch-select').value;
-      const select = document.getElementById('informed-select');
+      const selectLimp = document.getElementById('limpieza-select');
+      const selectSeg = document.getElementById('seguridad-select');
       if (!buildingId) return;
 
       const { data } = await supabaseClient
@@ -511,10 +534,19 @@
         .order('full_name');
 
       if (data && data.length > 0) {
-        select.innerHTML = '<option value="">Seleccione personal...</option>' + 
-          data.map(p => `<option value="${p.full_name}">${p.full_name} (${p.role_type})</option>`).join('');
+        const limpStaff = data.filter(p => p.role_type === 'LIMPIEZA');
+        const segStaff = data.filter(p => p.role_type === 'VIGILANCIA');
+
+        selectLimp.innerHTML = limpStaff.length > 0
+          ? '<option value="">Seleccione personal de limpieza...</option>' + limpStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('')
+          : '<option value="">Sin personal de limpieza (Cargar en Personal Operativo)</option>';
+
+        selectSeg.innerHTML = segStaff.length > 0
+          ? '<option value="">Seleccione personal de seguridad...</option>' + segStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('')
+          : '<option value="">Sin personal de seguridad (Cargar en Personal Operativo)</option>';
       } else {
-        select.innerHTML = '<option value="">No hay personal registrado (Cargar en Personal Operativo)</option>';
+        selectLimp.innerHTML = '<option value="">Sin personal activo registrado</option>';
+        selectSeg.innerHTML = '<option value="">Sin personal activo registrado</option>';
       }
     }
 
@@ -581,15 +613,16 @@
       document.getElementById('depot-title').textContent = `Stock Depósito: ${branchName}`;
 
       const { data: stockData, error: stockErr } = await supabaseClient.from('stock').select('product_id, qty').eq('building_id', buildingId);
-      const container = document.getElementById('stock-list');
+      const tbody = document.getElementById('stock-table-body');
       const selectConsume = document.getElementById('product-select');
       const costContainer = document.getElementById('total-cost-container');
       const totalVal = document.getElementById('total-cost-val');
+      const thCost = document.getElementById('th-cost-col');
 
       currentBranchStock = {};
 
       if (stockErr) {
-        container.innerHTML = `<p class="text-red-600 text-xs">Error al cargar stock: ${stockErr.message}</p>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-red-600 text-center">Error al cargar stock: ${stockErr.message}</td></tr>`;
         return;
       }
 
@@ -598,51 +631,46 @@
       let grandTotalCost = 0;
 
       if (!stockData || stockData.length === 0) {
-        container.innerHTML = `<p class="text-gray-500 text-xs p-3 bg-gray-50 rounded">No hay stock registrado en esta sucursal.</p>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-gray-500 text-center">No hay stock registrado en esta sucursal.</td></tr>`;
       } else {
-        container.innerHTML = stockData.map(item => {
+        tbody.innerHTML = stockData.map(item => {
           currentBranchStock[item.product_id] = item.qty;
           const nameFormatted = item.product_id.replace(/-/g, ' ');
           selectConsume.innerHTML += `<option value="${item.product_id}">${nameFormatted} (Disponible: ${item.qty})</option>`;
           
-          let alertBadge = '';
+          let alertBadge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Normal</span>`;
           if (item.qty <= 10) {
-            alertBadge = `<span class="mr-2 text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded">Stock Crítico</span>`;
+            alertBadge = `<span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded">Stock Crítico</span>`;
           } else if (item.qty >= 200) {
-            alertBadge = `<span class="mr-2 text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Sobrestock</span>`;
+            alertBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">Sobrestock</span>`;
           }
 
-          let priceHtml = '';
+          let priceTd = '';
           if (canSeePrices) {
             const unitPrice = globalPrices[item.product_id] || 0;
             const totalItemCost = unitPrice * item.qty;
             grandTotalCost += totalItemCost;
-            priceHtml = `
-              <div class="text-right ml-4">
-                <span class="text-xs text-gray-500 block">$${unitPrice.toFixed(2)} c/u</span>
-                <span class="text-xs font-semibold text-slate-700">$${totalItemCost.toFixed(2)}</span>
-              </div>
-            `;
+            priceTd = `<td class="p-2 text-right font-semibold text-slate-700">$${totalItemCost.toFixed(2)}</td>`;
           }
 
           return `
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded border text-sm">
-              <span class="font-medium capitalize">${nameFormatted}</span>
-              <div class="flex items-center">
-                ${alertBadge}
-                <span class="font-bold bg-slate-200 px-3 py-1 rounded text-xs">${item.qty} u</span>
-                ${priceHtml}
-              </div>
-            </div>
+            <tr class="border-b hover:bg-gray-100 text-xs">
+              <td class="p-2 font-medium capitalize text-slate-800">${nameFormatted}</td>
+              <td class="p-2 text-center font-extrabold text-slate-800">${item.qty} u</td>
+              <td class="p-2 text-center">${alertBadge}</td>
+              ${priceTd}
+            </tr>
           `;
         }).join('');
       }
 
       if (canSeePrices) {
         costContainer.classList.remove('hidden');
+        thCost.classList.remove('hidden');
         totalVal.textContent = `$${grandTotalCost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
       } else {
         costContainer.classList.add('hidden');
+        thCost.classList.add('hidden');
       }
     }
 
@@ -795,7 +823,7 @@
         document.getElementById('staff-name').value = '';
         closeStaffModal();
         loadStaffTable();
-        loadStaffSelect();
+        loadStaffSelects();
       }
     }
 
@@ -808,7 +836,7 @@
       if (error) alert(`Error al actualizar estado: ${error.message}`);
       else {
         loadStaffTable();
-        loadStaffSelect();
+        loadStaffSelects();
       }
     }
 
@@ -822,20 +850,23 @@
       const buildingId = document.getElementById('branch-select').value;
       const productId = document.getElementById('product-select').value;
       const qty = parseInt(document.getElementById('qty-input').value);
-      const informedBy = document.getElementById('informed-select').value;
+      const retiraLimpieza = document.getElementById('limpieza-select').value;
+      const informaSeguridad = document.getElementById('seguridad-select').value;
       const note = document.getElementById('note-input').value;
 
-      if (!informedBy) {
-        alert('Por favor selecciona el personal de la lista que retira el insumo.');
+      if (!retiraLimpieza || !informaSeguridad) {
+        alert('Por favor selecciona tanto el personal de Limpieza (retira) como el personal de Seguridad (informa).');
         btn.disabled = false;
         return;
       }
+
+      const informedByCombined = `Retiró: ${retiraLimpieza} | Informó: ${informaSeguridad}`;
 
       const { data, error } = await supabaseClient.rpc('registrar_consumo', {
         p_building_id: buildingId,
         p_product_id: productId,
         p_qty: qty,
-        p_informed_by: informedBy,
+        p_informed_by: informedByCombined,
         p_registered_by: currentUser.email,
         p_note: note
       });
