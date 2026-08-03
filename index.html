@@ -65,7 +65,7 @@
           <button onclick="logout()" class="text-xs text-red-600 underline ml-4">Cerrar Sesión</button>
         </div>
 
-        <!-- Dashboard Operativo de Indicadores (IES, IPC, Alertas) -->
+        <!-- Dashboard Operativo de Indicadores -->
         <div id="dashboard-metrics-panel" class="hidden mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           <div class="bg-blue-50 border border-blue-200 p-3 rounded text-center">
             <span class="text-[10px] font-bold text-blue-800 uppercase block">Índice Eficiencia (IES)</span>
@@ -129,7 +129,7 @@
               </div>
             </div>
 
-            <!-- Formulario de Consumo Diario (Exclusivo Vigilador) -->
+            <!-- Formulario de Consumo Diario (Vigilador) -->
             <div id="consume-form-panel" class="bg-gray-50 p-3 rounded border h-fit shadow-sm">
               <h3 class="text-xs font-bold text-slate-800 border-b pb-1.5 mb-2">Registro de Consumo Diario (RN-001)</h3>
               <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-2">
@@ -336,11 +336,6 @@
               </div>
             </div>
 
-            <div class="mb-3">
-              <label class="block text-xs font-bold text-gray-700">Observaciones del Remito / Motivo de Diferencia:</label>
-              <input type="text" id="rec-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Se reciben bultos sellados. Falta 1 u por proveedor">
-            </div>
-
             <h4 class="text-xs font-bold text-gray-700 mb-2">Conteo Físico de Insumos Recibidos:</h4>
             <div id="reception-items-list" class="space-y-1.5 mb-4 max-h-60 overflow-y-auto"></div>
 
@@ -374,7 +369,7 @@
           </div>
         </div>
 
-        <!-- Sección 4: Pedidos Mensuales con Modal de Visualización Detallada -->
+        <!-- Sección 4: Pedidos Mensuales -->
         <div id="view-orders" class="hidden">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
             <div>
@@ -411,7 +406,6 @@
             </table>
           </div>
 
-          <!-- Modal Confección Pedido Mensual -->
           <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
@@ -444,7 +438,6 @@
             </div>
           </div>
 
-          <!-- Modal Ver Detalle de Pedido Existente -->
           <div id="order-detail-panel" class="hidden bg-slate-100 p-4 rounded border border-blue-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <div>
@@ -1028,6 +1021,19 @@
       loadAuditLog();
     }
 
+    function exportAuditCSV() {
+      if (!currentAuditData || currentAuditData.length === 0) return alert('No hay datos para exportar.');
+      let csv = 'Fecha,Accion,Producto,Cantidad,RegistradoPor,Detalle\n';
+      currentAuditData.forEach(r => {
+        csv += `"${r.created_at}","${r.action}","${r.product_id}","${r.qty_changed}","${r.registered_by || ''}","${(r.note || '').replace(/"/g, '""')}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `auditoria_sigcil_${document.getElementById('branch-select').value}.csv`;
+      link.click();
+    }
+
     async function loadRecepciones() {
       const buildingId = document.getElementById('branch-select').value;
       const statusFilter = document.getElementById('rec-status-filter')?.value || 'ALL';
@@ -1093,6 +1099,141 @@
       if (document.getElementById('rec-status-filter')) document.getElementById('rec-status-filter').value = 'ALL';
       if (document.getElementById('rec-month-filter')) document.getElementById('rec-month-filter').value = '';
       loadRecepciones();
+    }
+
+    async function loadStaffTable() {
+      const buildingId = document.getElementById('branch-select').value;
+      if (!buildingId) return;
+
+      const tbody = document.getElementById('staff-table-body');
+      const { data, error } = await supabaseClient
+        .from('personal_operativo')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('full_name');
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-red-600 text-center">Error al cargar personal: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-gray-500 text-center">No hay personal registrado en esta sucursal.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(s => {
+        const statusBadge = s.is_active
+          ? `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVO</span>`
+          : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">INACTIVO</span>`;
+
+        const actionBtn = s.is_active
+          ? `<button onclick="toggleStaffStatus(${s.id}, false)" class="text-red-600 font-bold hover:underline">Dar de Baja</button>`
+          : `<button onclick="toggleStaffStatus(${s.id}, true)" class="text-emerald-700 font-bold hover:underline">Reactivar</button>`;
+
+        return `
+          <tr class="border-b hover:bg-gray-100 text-xs">
+            <td class="p-2 font-semibold text-slate-800">${s.full_name}</td>
+            <td class="p-2 font-bold text-gray-600">${s.role_type}</td>
+            <td class="p-2">${statusBadge}</td>
+            <td class="p-2">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openStaffModal() {
+      document.getElementById('staff-form-panel').classList.remove('hidden');
+    }
+
+    function closeStaffModal() {
+      document.getElementById('staff-form-panel').classList.add('hidden');
+    }
+
+    async function handleSaveStaff(e) {
+      e.preventDefault();
+      const buildingId = document.getElementById('branch-select').value;
+      const name = document.getElementById('staff-name').value.trim();
+      const role = document.getElementById('staff-role').value;
+
+      if (!name) return alert('Por favor ingresa nombre y apellido.');
+
+      const { error } = await supabaseClient.from('personal_operativo').insert([{
+        building_id: buildingId,
+        full_name: name,
+        role_type: role,
+        is_active: true
+      }]);
+
+      if (error) {
+        alert(`Error al guardar: ${error.message}`);
+      } else {
+        alert('Personal operativo registrado exitosamente.');
+        document.getElementById('staff-name').value = '';
+        closeStaffModal();
+        loadStaffTable();
+        loadStaffSelects();
+      }
+    }
+
+    async function toggleStaffStatus(staffId, newStatus) {
+      const { error } = await supabaseClient
+        .from('personal_operativo')
+        .update({ is_active: newStatus })
+        .eq('id', staffId);
+
+      if (error) alert(`Error al actualizar estado: ${error.message}`);
+      else {
+        loadStaffTable();
+        loadStaffSelects();
+      }
+    }
+
+    async function handleConsume(e) {
+      e.preventDefault();
+      const msgDiv = document.getElementById('form-msg');
+      const btn = document.getElementById('btn-submit-consume');
+      msgDiv.classList.add('hidden');
+      btn.disabled = true;
+
+      const buildingId = document.getElementById('branch-select').value;
+      const productId = document.getElementById('product-select').value;
+      const qty = parseInt(document.getElementById('qty-input').value);
+      const retiraLimpieza = document.getElementById('limpieza-select').value;
+      const informaSeguridad = document.getElementById('seguridad-select').value;
+      const note = document.getElementById('note-input').value;
+
+      if (!retiraLimpieza || !informaSeguridad) {
+        alert('Por favor selecciona tanto el personal de Limpieza (retira) como el personal de Seguridad (informa).');
+        btn.disabled = false;
+        return;
+      }
+
+      const informedByCombined = `Retiró: ${retiraLimpieza} | Informó: ${informaSeguridad}`;
+
+      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
+        p_building_id: buildingId,
+        p_product_id: productId,
+        p_qty: qty,
+        p_informed_by: informedByCombined,
+        p_registered_by: currentUser.email,
+        p_note: note
+      });
+
+      if (error) {
+        msgDiv.className = 'mt-2 text-xs p-1.5 rounded bg-red-100 text-red-700 border border-red-200';
+        msgDiv.textContent = `Error: ${error.message}`;
+        msgDiv.classList.remove('hidden');
+      } else {
+        msgDiv.className = 'mt-2 text-xs p-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
+        msgDiv.textContent = 'Consumo registrado exitosamente.';
+        msgDiv.classList.remove('hidden');
+        document.getElementById('consumption-form').reset();
+        document.getElementById('qty-avail-msg').textContent = '';
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+      btn.disabled = false;
     }
 
     async function loadOrders() {
