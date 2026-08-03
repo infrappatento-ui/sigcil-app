@@ -253,17 +253,23 @@
             </table>
           </div>
 
-          <!-- Modal Carga Vigilador -->
+          <!-- Modal Carga Vigilador con Desplegable de Personal de Seguridad -->
           <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Registro de Remito Físico (Vigilancia / Operativa)</h3>
               <button onclick="closeNewReceptionModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
                 <label class="block text-xs font-bold text-gray-700">N° de Remito del Proveedor:</label>
                 <input type="text" id="rec-remito" class="w-full p-2 border rounded text-xs bg-white" required placeholder="Ej: REM-00012948">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Personal que Informa (Seguridad):</label>
+                <select id="rec-seguridad-select" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <option value="">Seleccione personal de seguridad...</option>
+                </select>
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-700">Observaciones del Remito:</label>
@@ -305,7 +311,7 @@
           </div>
         </div>
 
-        <!-- Pedidos Mensuales -->
+        <!-- Pedidos Mensuales (Oculto por defecto para Vigiladores) -->
         <div id="view-orders" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -343,7 +349,7 @@
           </div>
         </div>
 
-        <!-- Usuarios -->
+        <!-- Usuarios (Oculto por defecto) -->
         <div id="view-users" class="hidden">
           <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
@@ -363,7 +369,7 @@
           </div>
         </div>
 
-        <!-- Vista Consolidada -->
+        <!-- Vista Consolidada (Oculto por defecto) -->
         <div id="view-consolidated" class="hidden">
           <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
@@ -483,6 +489,7 @@
       await loadBranches();
       await loadCatalog();
       onBranchChange();
+      switchView('operational');
     }
 
     async function onBranchChange() {
@@ -524,6 +531,7 @@
       const buildingId = document.getElementById('branch-select').value;
       const selectLimp = document.getElementById('limpieza-select');
       const selectSeg = document.getElementById('seguridad-select');
+      const selectRecSeg = document.getElementById('rec-seguridad-select');
       if (!buildingId) return;
 
       const { data } = await supabaseClient
@@ -541,12 +549,16 @@
           ? '<option value="">Seleccione personal de limpieza...</option>' + limpStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('')
           : '<option value="">Sin personal de limpieza (Cargar en Personal Operativo)</option>';
 
-        selectSeg.innerHTML = segStaff.length > 0
+        const segOptions = segStaff.length > 0
           ? '<option value="">Seleccione personal de seguridad...</option>' + segStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('')
           : '<option value="">Sin personal de seguridad (Cargar en Personal Operativo)</option>';
+
+        selectSeg.innerHTML = segOptions;
+        if (selectRecSeg) selectRecSeg.innerHTML = segOptions;
       } else {
         selectLimp.innerHTML = '<option value="">Sin personal activo registrado</option>';
         selectSeg.innerHTML = '<option value="">Sin personal activo registrado</option>';
+        if (selectRecSeg) selectRecSeg.innerHTML = '<option value="">Sin personal activo registrado</option>';
       }
     }
 
@@ -962,9 +974,11 @@
     async function submitReception() {
       const buildingId = document.getElementById('branch-select').value;
       const remito = document.getElementById('rec-remito').value.trim();
-      const notes = document.getElementById('rec-notes').value.trim();
+      const seguridadInforma = document.getElementById('rec-seguridad-select').value;
+      const notesInput = document.getElementById('rec-notes').value.trim();
 
       if (!remito) return alert('Por favor ingresa el N° de Remito del Proveedor.');
+      if (!seguridadInforma) return alert('Por favor selecciona el Personal de Seguridad que informa la recepción.');
 
       let itemsToInsert = [];
       globalProducts.forEach(p => {
@@ -977,14 +991,16 @@
 
       if (itemsToInsert.length === 0) return alert('Debes ingresar la cantidad de al menos 1 producto recibido.');
 
+      const notesCombined = `Informado por (Seguridad): ${seguridadInforma}` + (notesInput ? ` | Obs: ${notesInput}` : '');
+
       const { data: recData, error: recErr } = await supabaseClient
         .from('recepciones')
         .insert([{
           building_id: buildingId,
           supplier_remito: remito,
           status: 'PENDIENTE_VALIDACION',
-          registered_by: currentUser.email,
-          notes: notes
+          registered_by: `${currentUser.email} (${seguridadInforma})`,
+          notes: notesCombined
         }])
         .select()
         .single();
