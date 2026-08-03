@@ -58,7 +58,7 @@
           <!-- Selector Multidepósito Dinámico -->
           <div class="text-right">
             <label class="block text-xs font-bold text-gray-600 mb-1">Sucursal / Depósito:</label>
-            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders();" class="p-2 border rounded text-xs bg-slate-50 font-semibold disabled:bg-gray-200 disabled:text-gray-600">
+            <select id="branch-select" onchange="loadStockAndPrices(); loadAuditLog(); loadOrders(); loadRecepciones();" class="p-2 border rounded text-xs bg-slate-50 font-semibold disabled:bg-gray-200 disabled:text-gray-600">
               <option value="">Cargando sucursales...</option>
             </select>
           </div>
@@ -66,18 +66,18 @@
           <button onclick="logout()" class="text-xs text-red-600 underline ml-4">Cerrar Sesión</button>
         </div>
 
-        <!-- Pestañas de Navegación del Menú Principal -->
+        <!-- Pestañas de Navegación -->
         <div class="flex border-b mb-6 text-xs font-bold space-x-1" id="view-tabs">
           <button id="view-op-btn" onclick="switchView('operational')" class="pb-2 px-3 border-b-2 border-slate-800 text-slate-800">Vista Operativa</button>
+          <button id="view-reception-btn" onclick="switchView('receptions')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Recepciones (RN-006)</button>
           <button id="view-orders-btn" onclick="switchView('orders')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Pedidos Mensuales</button>
           <button id="view-users-btn" onclick="switchView('users')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Gestión de Usuarios (Admin)</button>
           <button id="view-cons-btn" onclick="switchView('consolidated')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hidden">Matriz Consolidada</button>
         </div>
 
-        <!-- Sección 1: Vista Operativa -->
+        <!-- Sección 1: Vista Operativa (Consumo Directo) -->
         <div id="view-operational">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Columna Izquierda: Listado de Stock -->
             <div class="md:col-span-2">
               <div class="flex justify-between items-center mb-3">
                 <h2 class="text-lg font-bold" id="depot-title">Stock Actual</h2>
@@ -91,14 +91,8 @@
               </div>
             </div>
 
-            <!-- Columna Derecha: Panel Operativo (Consumo e Ingreso) -->
             <div class="bg-gray-50 p-4 rounded border h-fit">
-              <div class="flex border-b mb-3 text-xs font-bold">
-                <button id="tab-consume-btn" onclick="switchTab('consume')" class="pb-2 px-3 border-b-2 border-emerald-600 text-emerald-700 w-1/2 text-center">Consumo</button>
-                <button id="tab-ingress-btn" onclick="switchTab('ingress')" class="pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 w-1/2 text-center">Ingreso / Compra</button>
-              </div>
-
-              <!-- Formulario Consumo -->
+              <h3 class="text-xs font-bold text-slate-800 border-b pb-2 mb-3">Registro de Consumo Diario (RN-001)</h3>
               <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
                 <div>
                   <label class="block text-xs font-bold text-gray-700">Producto</label>
@@ -120,41 +114,15 @@
                 </div>
                 <button type="submit" id="btn-submit-consume" class="w-full bg-emerald-600 text-white py-2 rounded text-xs font-bold hover:bg-emerald-700">Confirmar Registro</button>
               </form>
-
-              <!-- Formulario Ingreso -->
-              <form id="ingress-form" onsubmit="handleIngress(event)" class="space-y-3 hidden">
-                <div>
-                  <label class="block text-xs font-bold text-gray-700">Producto (Catálogo General)</label>
-                  <select id="ingress-product-select" class="w-full p-2 border rounded text-xs bg-white" required>
-                    <option value="">Seleccione insumo...</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-700">Cantidad recibida</label>
-                  <input type="number" id="ingress-qty-input" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 50">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-700">Proveedor / Remito</label>
-                  <input type="text" id="supplier-input" class="w-full p-2 border rounded text-xs" required placeholder="Ej: Distribuidora Norte - Remito #1042">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-700">Observación / Nota</label>
-                  <input type="text" id="ingress-note-input" class="w-full p-2 border rounded text-xs" placeholder="Opcional">
-                </div>
-                <button type="submit" id="btn-submit-ingress" class="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-700">Registrar Ingreso</button>
-              </form>
-
               <div id="form-msg" class="mt-3 text-xs p-2 rounded hidden"></div>
             </div>
           </div>
 
-          <!-- Módulo de Auditoría -->
+          <!-- Auditoría -->
           <div class="border-t pt-6">
             <div class="flex justify-between items-center mb-3">
               <h2 class="text-lg font-bold text-slate-800">Historial de Auditoría y Trazabilidad (RN-002)</h2>
-              <button onclick="exportAuditCSV()" class="bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-800 flex items-center gap-1">
-                📥 Exportar CSV
-              </button>
+              <button onclick="exportAuditCSV()" class="bg-slate-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-800">📥 Exportar CSV</button>
             </div>
             <div class="overflow-x-auto bg-gray-50 rounded border">
               <table class="w-full text-left text-xs text-gray-600">
@@ -176,7 +144,64 @@
           </div>
         </div>
 
-        <!-- Sección 2: Módulo de Pedidos Mensuales -->
+        <!-- Sección 2: Módulo de Recepciones (Fase 2 - RN-006) -->
+        <div id="view-receptions" class="hidden">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
+              <p class="text-xs text-gray-500">El Vigilador carga la recepción física. El Intendente aprueba y valida para impactar el incremento de stock.</p>
+            </div>
+            <button onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-2 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Recepción Física (Vigilador)</button>
+          </div>
+
+          <div class="overflow-x-auto bg-gray-50 rounded border mb-6">
+            <table class="w-full text-left text-xs text-gray-600">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5">ID</th>
+                  <th class="p-2.5">Fecha</th>
+                  <th class="p-2.5">N° Remito Proveedor</th>
+                  <th class="p-2.5">Registrado Por</th>
+                  <th class="p-2.5">Estado</th>
+                  <th class="p-2.5">Validado Por</th>
+                  <th class="p-2.5">Acción (Intendencia)</th>
+                </tr>
+              </thead>
+              <tbody id="receptions-table-body">
+                <tr><td colspan="7" class="p-3 text-center text-gray-500">Cargando recepciones...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Formulario Modal Nueva Recepción -->
+          <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 class="text-sm font-bold text-slate-800">Registro de Remito Físico (Vigilancia / Operativa)</h3>
+              <button onclick="closeNewReceptionModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700">N° de Remito del Proveedor:</label>
+                <input type="text" id="rec-remito" class="w-full p-2 border rounded text-xs bg-white" required placeholder="Ej: REM-00012948">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Observaciones del Remito:</label>
+                <input type="text" id="rec-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Recepción con bultos sellados">
+              </div>
+            </div>
+
+            <h4 class="text-xs font-bold text-gray-700 mb-2">Conteo Físico de Insumos Recibidos:</h4>
+            <div id="reception-items-list" class="space-y-2 mb-4"></div>
+
+            <div class="flex justify-end space-x-2 border-t pt-3">
+              <button onclick="closeNewReceptionModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
+              <button onclick="submitReception()" class="bg-blue-700 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-blue-800">Guardar Recepción (Pendiente de Validación)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección 3: Pedidos Mensuales -->
         <div id="view-orders" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -213,14 +238,11 @@
             </table>
           </div>
 
-          <!-- Formulario Nuevo Pedido -->
+          <!-- Modal Pedido Mensual -->
           <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
-              <div>
-                <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
-                <p class="text-[11px] text-gray-500">Sugerencia calculada automáticamente según cobertura objetivo (1,5 meses) y stock actual.</p>
-              </div>
-              <span class="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Estado: PENDIENTE DE REVISIÓN</span>
+              <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
+              <button onclick="closeNewOrderModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -250,15 +272,9 @@
           </div>
         </div>
 
-        <!-- Sección 3: Módulo de Usuarios (Solo Administrador / Jefe) -->
+        <!-- Sección 4: Módulo de Usuarios -->
         <div id="view-users" class="hidden">
-          <div class="flex justify-between items-center mb-4">
-            <div>
-              <h2 class="text-lg font-bold text-slate-800">Administración de Usuarios y Perfiles (RN-004)</h2>
-              <p class="text-xs text-gray-500">Módulo restringido a perfiles de administración funcional.</p>
-            </div>
-          </div>
-
+          <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
             <table class="w-full text-left text-xs text-gray-600">
               <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
@@ -276,7 +292,7 @@
           </div>
         </div>
 
-        <!-- Sección 4: Vista Consolidada -->
+        <!-- Sección 5: Vista Consolidada -->
         <div id="view-consolidated" class="hidden">
           <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
@@ -381,6 +397,7 @@
       loadStockAndPrices();
       loadAuditLog();
       loadOrders();
+      loadRecepciones();
     }
 
     async function loadBranches() {
@@ -399,12 +416,9 @@
     }
 
     async function loadCatalog() {
-      const selectIngress = document.getElementById('ingress-product-select');
       const { data, error } = await supabaseClient.from('productos').select('id, name').order('name');
       if (!error && data) {
         globalProducts = data;
-        selectIngress.innerHTML = '<option value="">Seleccione insumo...</option>' + 
-          data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
       }
 
       const { data: pricesData } = await supabaseClient.from('precios_insumos').select('product_id, estimated_unit_price');
@@ -415,21 +429,25 @@
 
     function switchView(view) {
       const opDiv = document.getElementById('view-operational');
+      const recDiv = document.getElementById('view-receptions');
       const ordersDiv = document.getElementById('view-orders');
       const usersDiv = document.getElementById('view-users');
       const consDiv = document.getElementById('view-consolidated');
 
       const opBtn = document.getElementById('view-op-btn');
+      const recBtn = document.getElementById('view-reception-btn');
       const ordersBtn = document.getElementById('view-orders-btn');
       const usersBtn = document.getElementById('view-users-btn');
       const consBtn = document.getElementById('view-cons-btn');
 
       opDiv.classList.add('hidden');
+      recDiv.classList.add('hidden');
       ordersDiv.classList.add('hidden');
       usersDiv.classList.add('hidden');
       consDiv.classList.add('hidden');
 
       opBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+      recBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       ordersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       usersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
       consBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
@@ -437,6 +455,10 @@
       if (view === 'operational') {
         opDiv.classList.remove('hidden');
         opBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
+      } else if (view === 'receptions') {
+        recDiv.classList.remove('hidden');
+        recBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
+        loadRecepciones();
       } else if (view === 'orders') {
         ordersDiv.classList.remove('hidden');
         ordersBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
@@ -449,26 +471,6 @@
         consDiv.classList.remove('hidden');
         consBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
         loadConsolidatedMatrix();
-      }
-    }
-
-    function switchTab(tab) {
-      const consumeForm = document.getElementById('consumption-form');
-      const ingressForm = document.getElementById('ingress-form');
-      const consumeBtn = document.getElementById('tab-consume-btn');
-      const ingressBtn = document.getElementById('tab-ingress-btn');
-      document.getElementById('form-msg').classList.add('hidden');
-
-      if (tab === 'consume') {
-        consumeForm.classList.remove('hidden');
-        ingressForm.classList.add('hidden');
-        consumeBtn.className = 'pb-2 px-3 border-b-2 border-emerald-600 text-emerald-700 w-1/2 text-center';
-        ingressBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 w-1/2 text-center';
-      } else {
-        consumeForm.classList.add('hidden');
-        ingressForm.classList.remove('hidden');
-        ingressBtn.className = 'pb-2 px-3 border-b-2 border-blue-600 text-blue-700 w-1/2 text-center';
-        consumeBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 w-1/2 text-center';
       }
     }
 
@@ -586,6 +588,171 @@
           </tr>
         `;
       }).join('');
+    }
+
+    async function loadRecepciones() {
+      const buildingId = document.getElementById('branch-select').value;
+      if (!buildingId) return;
+
+      const tbody = document.getElementById('receptions-table-body');
+      const { data, error } = await supabaseClient
+        .from('recepciones')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-red-600 text-center">Error al cargar recepciones: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-gray-500 text-center">No hay remitos de recepción registrados en esta sucursal.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(r => {
+        const dateFormatted = new Date(r.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        
+        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">PENDIENTE VALIDACION</span>`;
+        if (r.status === 'VALIDADO') {
+          statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">VALIDADO E IMPACTADO</span>`;
+        }
+
+        let actionBtn = '-';
+        if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'JEFE' || currentUserRole === 'COORDINADOR') && r.status === 'PENDIENTE_VALIDACION') {
+          actionBtn = `<button onclick="validarRecepcionIntendencia(${r.id})" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar y Validar Stock (RN-006)</button>`;
+        }
+
+        return `
+          <tr class="border-b hover:bg-gray-100">
+            <td class="p-2.5 font-bold">#${r.id}</td>
+            <td class="p-2.5 font-mono text-[11px]">${dateFormatted}</td>
+            <td class="p-2.5 font-mono font-bold text-slate-800">${r.supplier_remito}</td>
+            <td class="p-2.5 text-gray-500">${r.registered_by}</td>
+            <td class="p-2.5">${statusBadge}</td>
+            <td class="p-2.5 text-gray-500">${r.validated_by || 'Pendiente'}</td>
+            <td class="p-2.5">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openNewReceptionModal() {
+      const panel = document.getElementById('reception-form-panel');
+      const itemsList = document.getElementById('reception-items-list');
+      panel.classList.remove('hidden');
+
+      itemsList.innerHTML = globalProducts.map(p => {
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded border text-xs">
+            <span class="font-semibold capitalize">${p.name}</span>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-bold text-gray-700">Cantidad Físicamente Contada:</label>
+              <input type="number" id="rec-qty-${p.id}" min="0" value="0" class="w-20 p-1 border rounded text-xs text-center font-bold">
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function closeNewReceptionModal() {
+      document.getElementById('reception-form-panel').classList.add('hidden');
+    }
+
+    async function submitReception() {
+      const buildingId = document.getElementById('branch-select').value;
+      const remito = document.getElementById('rec-remito').value.trim();
+      const notes = document.getElementById('rec-notes').value.trim();
+
+      if (!remito) return alert('Por favor ingresa el N° de Remito del Proveedor.');
+
+      let itemsToInsert = [];
+      globalProducts.forEach(p => {
+        const input = document.getElementById(`rec-qty-${p.id}`);
+        const qty = parseInt(input?.value) || 0;
+        if (qty > 0) {
+          itemsToInsert.push({ product_id: p.id, qty_received: qty });
+        }
+      });
+
+      if (itemsToInsert.length === 0) return alert('Debes ingresar la cantidad de al menos 1 producto recibido.');
+
+      const { data: recData, error: recErr } = await supabaseClient
+        .from('recepciones')
+        .insert([{
+          building_id: buildingId,
+          supplier_remito: remito,
+          status: 'PENDIENTE_VALIDACION',
+          registered_by: currentUser.email,
+          notes: notes
+        }])
+        .select()
+        .single();
+
+      if (recErr) return alert(`Error al registrar recepción: ${recErr.message}`);
+
+      const detailsWithId = itemsToInsert.map(item => ({ ...item, recepcion_id: recData.id }));
+      await supabaseClient.from('recepciones_detalle').insert(detailsWithId);
+
+      alert('Recepción registrada con éxito. Estado: PENDIENTE DE VALIDACIÓN POR INTENDENCIA (RN-006).');
+      closeNewReceptionModal();
+      loadRecepciones();
+    }
+
+    async function validarRecepcionIntendencia(recepcionId) {
+      if (!confirm('¿Confirmas que verificaste el remito y la cantidad física? Al aprobar, el stock de esta sucursal se incrementará automáticamente.')) return;
+
+      const { data, error } = await supabaseClient.rpc('validar_recepcion', {
+        p_recepcion_id: recepcionId,
+        p_validated_by: currentUser.email
+      });
+
+      if (error) {
+        alert(`Error al validar la recepción: ${error.message}`);
+      } else {
+        alert('Recepción validada con éxito. El stock de la sucursal ha sido actualizado.');
+        loadRecepciones();
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+    }
+
+    async function handleConsume(e) {
+      e.preventDefault();
+      const msgDiv = document.getElementById('form-msg');
+      const btn = document.getElementById('btn-submit-consume');
+      msgDiv.classList.add('hidden');
+      btn.disabled = true;
+
+      const buildingId = document.getElementById('branch-select').value;
+      const productId = document.getElementById('product-select').value;
+      const qty = parseInt(document.getElementById('qty-input').value);
+      const informedBy = document.getElementById('informed-input').value;
+      const note = document.getElementById('note-input').value;
+
+      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
+        p_building_id: buildingId,
+        p_product_id: productId,
+        p_qty: qty,
+        p_informed_by: informedBy,
+        p_registered_by: currentUser.email,
+        p_note: note
+      });
+
+      if (error) {
+        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
+        msgDiv.textContent = `Error: ${error.message}`;
+        msgDiv.classList.remove('hidden');
+      } else {
+        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
+        msgDiv.textContent = 'Consumo registrado exitosamente.';
+        msgDiv.classList.remove('hidden');
+        document.getElementById('consumption-form').reset();
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+      btn.disabled = false;
     }
 
     async function loadOrders() {
@@ -850,80 +1017,6 @@
           </tr>
         `;
       }).join('');
-    }
-
-    async function handleConsume(e) {
-      e.preventDefault();
-      const msgDiv = document.getElementById('form-msg');
-      const btn = document.getElementById('btn-submit-consume');
-      msgDiv.classList.add('hidden');
-      btn.disabled = true;
-
-      const buildingId = document.getElementById('branch-select').value;
-      const productId = document.getElementById('product-select').value;
-      const qty = parseInt(document.getElementById('qty-input').value);
-      const informedBy = document.getElementById('informed-input').value;
-      const note = document.getElementById('note-input').value;
-
-      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
-        p_building_id: buildingId,
-        p_product_id: productId,
-        p_qty: qty,
-        p_informed_by: informedBy,
-        p_registered_by: currentUser.email,
-        p_note: note
-      });
-
-      if (error) {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
-        msgDiv.textContent = `Error: ${error.message}`;
-        msgDiv.classList.remove('hidden');
-      } else {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
-        msgDiv.textContent = 'Consumo registrado exitosamente.';
-        msgDiv.classList.remove('hidden');
-        document.getElementById('consumption-form').reset();
-        loadStockAndPrices();
-        loadAuditLog();
-      }
-      btn.disabled = false;
-    }
-
-    async function handleIngress(e) {
-      e.preventDefault();
-      const msgDiv = document.getElementById('form-msg');
-      const btn = document.getElementById('btn-submit-ingress');
-      msgDiv.classList.add('hidden');
-      btn.disabled = true;
-
-      const buildingId = document.getElementById('branch-select').value;
-      const productId = document.getElementById('ingress-product-select').value;
-      const qty = parseInt(document.getElementById('ingress-qty-input').value);
-      const supplier = document.getElementById('supplier-input').value;
-      const note = document.getElementById('ingress-note-input').value;
-
-      const { data, error } = await supabaseClient.rpc('registrar_ingreso', {
-        p_building_id: buildingId,
-        p_product_id: productId,
-        p_qty: qty,
-        p_supplier: supplier,
-        p_registered_by: currentUser.email,
-        p_note: note
-      });
-
-      if (error) {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-red-100 text-red-700 border border-red-200';
-        msgDiv.textContent = `Error: ${error.message}`;
-        msgDiv.classList.remove('hidden');
-      } else {
-        msgDiv.className = 'mt-3 text-xs p-2 rounded bg-blue-100 text-blue-700 border border-blue-200';
-        msgDiv.textContent = 'Ingreso de stock registrado exitosamente.';
-        msgDiv.classList.remove('hidden');
-        document.getElementById('ingress-form').reset();
-        loadStockAndPrices();
-        loadAuditLog();
-      }
-      btn.disabled = false;
     }
 
     const savedUrl = localStorage.getItem('sb_url');
