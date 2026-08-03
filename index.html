@@ -78,7 +78,6 @@
         <!-- Sección 1: Vista Operativa -->
         <div id="view-operational">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Tabla Compacta de Stock -->
             <div class="md:col-span-2">
               <div class="flex justify-between items-center mb-3">
                 <h2 class="text-lg font-bold" id="depot-title">Stock Actual</h2>
@@ -104,7 +103,7 @@
               </div>
             </div>
 
-            <!-- Formulario de Consumo Diario con Doble Selector -->
+            <!-- Formulario de Consumo Diario -->
             <div class="bg-gray-50 p-4 rounded border h-fit">
               <h3 class="text-xs font-bold text-slate-800 border-b pb-2 mb-3">Registro de Consumo Diario (RN-001)</h3>
               <form id="consumption-form" onsubmit="handleConsume(event)" class="space-y-3">
@@ -175,7 +174,7 @@
           </div>
         </div>
 
-        <!-- Sección 2: Módulo de Personal Operativo -->
+        <!-- Sección 2: Personal Operativo -->
         <div id="view-staff" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -224,7 +223,7 @@
           </div>
         </div>
 
-        <!-- Sección 3: Módulo de Recepciones (RN-006) -->
+        <!-- Sección 3: Recepciones (RN-006) -->
         <div id="view-receptions" class="hidden">
           <div class="flex justify-between items-center mb-4">
             <div>
@@ -253,7 +252,7 @@
             </table>
           </div>
 
-          <!-- Modal Carga Vigilador con Desplegable de Personal de Seguridad -->
+          <!-- Modal Carga Vigilador -->
           <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Registro de Remito Físico (Vigilancia / Operativa)</h3>
@@ -297,7 +296,7 @@
             </div>
 
             <div class="mb-4">
-              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos:</h4>
+              <h4 class="text-xs font-bold text-slate-700 mb-2">Detalle de Insumos Recibidos (Verificar / Corregir Cantidades):</h4>
               <div id="audit-rec-items" class="space-y-2"></div>
             </div>
 
@@ -311,8 +310,8 @@
           </div>
         </div>
 
-        <!-- Pedidos Mensuales (Oculto por defecto para Vigiladores) -->
-        <div id="view-orders" class="hidden">
+        <!-- Pedidos Mensuales -->
+        <div id="view-orders" class="hidden" style="display: none;">
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-lg font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
@@ -349,8 +348,8 @@
           </div>
         </div>
 
-        <!-- Usuarios (Oculto por defecto) -->
-        <div id="view-users" class="hidden">
+        <!-- Usuarios -->
+        <div id="view-users" class="hidden" style="display: none;">
           <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
             <table class="w-full text-left text-xs text-gray-600">
@@ -369,8 +368,8 @@
           </div>
         </div>
 
-        <!-- Vista Consolidada (Oculto por defecto) -->
-        <div id="view-consolidated" class="hidden">
+        <!-- Vista Consolidada -->
+        <div id="view-consolidated" class="hidden" style="display: none;">
           <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
           <div class="overflow-x-auto bg-gray-50 rounded border">
             <table class="w-full text-left text-xs text-gray-600" id="consolidated-table">
@@ -459,32 +458,17 @@
         ? 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 uppercase'
         : 'inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase';
 
-      // Control Estricto de Visibilidad de Pestañas por Rol
       const isSupervisor = (currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE' || currentUserRole === 'CONTROLLER');
       const isIntendente = (currentUserRole === 'INTENDENTE');
 
-      if (isSupervisor) {
-        document.getElementById('view-cons-btn').classList.remove('hidden');
-        document.getElementById('btn-consolidate-ar').classList.remove('hidden');
-        document.getElementById('btn-export-csv').classList.remove('hidden');
-      } else {
-        document.getElementById('view-cons-btn').classList.add('hidden');
-        document.getElementById('btn-consolidate-ar').classList.add('hidden');
-      }
+      // Pestañas
+      document.getElementById('view-cons-btn').style.display = isSupervisor ? 'inline-block' : 'none';
+      document.getElementById('view-orders-btn').style.display = (isIntendente || isSupervisor) ? 'inline-block' : 'none';
+      document.getElementById('view-users-btn').style.display = (currentUserRole === 'ADMINISTRADOR' || currentUserRole === 'JEFE') ? 'inline-block' : 'none';
 
-      if (isIntendente || isSupervisor) {
-        document.getElementById('view-orders-btn').classList.remove('hidden');
-        document.getElementById('btn-export-csv').classList.remove('hidden');
-      } else {
-        document.getElementById('view-orders-btn').classList.add('hidden');
-        document.getElementById('btn-export-csv').classList.add('hidden');
-      }
-
-      if (currentUserRole === 'ADMINISTRADOR' || currentUserRole === 'JEFE') {
-        document.getElementById('view-users-btn').classList.remove('hidden');
-      } else {
-        document.getElementById('view-users-btn').classList.add('hidden');
-      }
+      // Botones auxiliares
+      document.getElementById('btn-consolidate-ar').classList.toggle('hidden', !isSupervisor);
+      document.getElementById('btn-export-csv').classList.toggle('hidden', !(isIntendente || isSupervisor));
 
       await loadBranches();
       await loadCatalog();
@@ -563,58 +547,32 @@
     }
 
     function switchView(view) {
-      const opDiv = document.getElementById('view-operational');
-      const recDiv = document.getElementById('view-receptions');
-      const staffDiv = document.getElementById('view-staff');
-      const ordersDiv = document.getElementById('view-orders');
-      const usersDiv = document.getElementById('view-users');
-      const consDiv = document.getElementById('view-consolidated');
+      const views = ['operational', 'receptions', 'staff', 'orders', 'users', 'consolidated'];
+      
+      views.forEach(v => {
+        const div = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`view-${v}-btn`);
+        if (div) {
+          if (v === view) {
+            div.classList.remove('hidden');
+            div.style.display = 'block';
+          } else {
+            div.classList.add('hidden');
+            div.style.display = 'none';
+          }
+        }
+        if (btn) {
+          btn.className = (v === view)
+            ? 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800'
+            : 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+        }
+      });
 
-      const opBtn = document.getElementById('view-op-btn');
-      const recBtn = document.getElementById('view-reception-btn');
-      const staffBtn = document.getElementById('view-staff-btn');
-      const ordersBtn = document.getElementById('view-orders-btn');
-      const usersBtn = document.getElementById('view-users-btn');
-      const consBtn = document.getElementById('view-cons-btn');
-
-      opDiv.classList.add('hidden');
-      recDiv.classList.add('hidden');
-      staffDiv.classList.add('hidden');
-      ordersDiv.classList.add('hidden');
-      usersDiv.classList.add('hidden');
-      consDiv.classList.add('hidden');
-
-      opBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      recBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      staffBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      ordersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      usersBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-      consBtn.className = 'pb-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-
-      if (view === 'operational') {
-        opDiv.classList.remove('hidden');
-        opBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
-      } else if (view === 'receptions') {
-        recDiv.classList.remove('hidden');
-        recBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
-        loadRecepciones();
-      } else if (view === 'staff') {
-        staffDiv.classList.remove('hidden');
-        staffBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
-        loadStaffTable();
-      } else if (view === 'orders') {
-        ordersDiv.classList.remove('hidden');
-        ordersBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
-        loadOrders();
-      } else if (view === 'users') {
-        usersDiv.classList.remove('hidden');
-        usersBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
-        loadUsersList();
-      } else {
-        consDiv.classList.remove('hidden');
-        consBtn.className = 'pb-2 px-3 border-b-2 border-slate-800 text-slate-800';
-        loadConsolidatedMatrix();
-      }
+      if (view === 'receptions') loadRecepciones();
+      else if (view === 'staff') loadStaffTable();
+      else if (view === 'orders') loadOrders();
+      else if (view === 'users') loadUsersList();
+      else if (view === 'consolidated') loadConsolidatedMatrix();
     }
 
     async function loadStockAndPrices() {
@@ -932,7 +890,7 @@
 
         let actionBtn = '-';
         if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'JEFE' || currentUserRole === 'COORDINADOR') && r.status === 'PENDIENTE_VALIDACION') {
-          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${r.registered_by}', '${r.notes || ''}')" class="bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar (RN-006)</button>`;
+          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${r.registered_by}', '${(r.notes || '').replace(/'/g, "\\'")}')" class="bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar (RN-006)</button>`;
         }
 
         return `
@@ -969,6 +927,93 @@
 
     function closeNewReceptionModal() {
       document.getElementById('reception-form-panel').classList.add('hidden');
+    }
+
+    async function openAuditModal(recId, remito, registeredBy, notes) {
+      activeAuditRecId = recId;
+      const panel = document.getElementById('reception-audit-panel');
+      const title = document.getElementById('audit-rec-title');
+      const subtitle = document.getElementById('audit-rec-subtitle');
+      const itemsContainer = document.getElementById('audit-rec-items');
+
+      title.textContent = `Auditoría de Recepción #${recId} - Remito N°: ${remito}`;
+      subtitle.textContent = `Registrado por: ${registeredBy} | Detalles: ${notes || 'Sin observaciones'}`;
+
+      const { data: details, error } = await supabaseClient
+        .from('recepciones_detalle')
+        .select('*')
+        .eq('recepcion_id', recId);
+
+      if (error || !details) return alert('Error al cargar detalle del remito.');
+
+      itemsContainer.innerHTML = details.map(d => {
+        const prodName = d.product_id.replace(/-/g, ' ');
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-white rounded border border-gray-300 text-xs">
+            <div>
+              <span class="font-bold text-slate-800 capitalize block">${prodName}</span>
+              <span class="text-[10px] text-gray-500">Cantidad Declarada en Remito</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-bold text-slate-700">Cantidad Aprobada:</label>
+              <input type="number" id="audit-qty-${d.id}" data-detail-id="${d.id}" min="0" value="${d.qty_received}" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      panel.classList.remove('hidden');
+    }
+
+    function closeAuditModal() {
+      document.getElementById('reception-audit-panel').classList.add('hidden');
+      activeAuditRecId = null;
+    }
+
+    async function confirmarValidacionIntendencia() {
+      if (!activeAuditRecId) return;
+
+      const inputs = document.querySelectorAll('[id^="audit-qty-"]');
+      for (let input of inputs) {
+        const detailId = input.getAttribute('data-detail-id');
+        const newQty = parseInt(input.value) || 0;
+        await supabaseClient.from('recepciones_detalle').update({ qty_received: newQty }).eq('id', detailId);
+      }
+
+      const { data, error } = await supabaseClient.rpc('validar_recepcion', {
+        p_recepcion_id: activeAuditRecId,
+        p_validated_by: currentUser.email
+      });
+
+      if (error) {
+        alert(`Error al validar: ${error.message}`);
+      } else {
+        alert('Recepción auditada y validada correctamente. El stock ha sido incrementado.');
+        closeAuditModal();
+        loadRecepciones();
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+    }
+
+    async function rechazarRecepcionAction() {
+      if (!activeAuditRecId) return;
+      const reason = prompt('Por favor ingresa la razón o justificación del rechazo del remito:');
+      if (!reason) return;
+
+      const { data, error } = await supabaseClient.rpc('rechazar_recepcion', {
+        p_recepcion_id: activeAuditRecId,
+        p_validated_by: currentUser.email,
+        p_reason: reason
+      });
+
+      if (error) {
+        alert(`Error al rechazar: ${error.message}`);
+      } else {
+        alert('Recepción rechazada correctamente. No se ha modificado el stock.');
+        closeAuditModal();
+        loadRecepciones();
+      }
     }
 
     async function submitReception() {
