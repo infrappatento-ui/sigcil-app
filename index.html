@@ -1608,125 +1608,6 @@
       }).join('');
     }
 
-    function openNewInventoryModal() {
-      const panel = document.getElementById('inventory-form-panel');
-      const itemsList = document.getElementById('inventory-items-list');
-      panel.classList.remove('hidden');
-
-      itemsList.innerHTML = globalProducts.map(p => {
-        const currentQty = currentBranchStock[p.id] || 0;
-        return `
-          <div class="p-2 bg-white rounded border border-gray-300 text-xs">
-            <div class="flex items-center justify-between mb-1">
-              <div>
-                <span class="font-bold text-slate-800 capitalize block">${p.name}</span>
-                <span class="text-[10px] text-gray-500">Stock Sistema: <b>${currentQty} u</b></span>
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="text-[10px] font-bold text-slate-700">Conteo Físico:</label>
-                <input type="number" id="inv-qty-${p.id}" data-sys-qty="${currentQty}" min="0" value="${currentQty}" onchange="checkInventoryDiff('${p.id}')" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
-              </div>
-            </div>
-            <div id="inv-reason-container-${p.id}" class="hidden mt-1 border-t pt-1">
-              <label class="block text-[10px] font-bold text-red-700">⚠️ Se detectó diferencia. Seleccione o ingrese el motivo obligatorio:</label>
-              <select id="inv-reason-select-${p.id}" class="w-full p-1 border rounded text-xs bg-red-50 font-semibold text-red-900 mt-0.5">
-                <option value="">Seleccione motivo del desvío...</option>
-                <option value="Merma de Insumos">Merma de Insumos</option>
-                <option value="Rotura o Daño Físico">Rotura o Daño Físico</option>
-                <option value="Vencimiento de Producto">Vencimiento de Producto</option>
-                <option value="Desvío de Conteo / Ajuste">Desvío de Conteo / Ajuste</option>
-                <option value="Error de Registro Operativo">Error de Registro Operativo</option>
-              </select>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function checkInventoryDiff(productId) {
-      const input = document.getElementById(`inv-qty-${productId}`);
-      const sysQty = parseInt(input.getAttribute('data-sys-qty')) || 0;
-      const physQty = parseInt(input.value) || 0;
-      const reasonDiv = document.getElementById(`inv-reason-container-${productId}`);
-
-      if (sysQty !== physQty) {
-        reasonDiv.classList.remove('hidden');
-      } else {
-        reasonDiv.classList.add('hidden');
-      }
-    }
-
-    function closeNewInventoryModal() {
-      document.getElementById('inventory-form-panel').classList.add('hidden');
-    }
-
-    async function submitInventory() {
-      const buildingId = document.getElementById('branch-select').value;
-      const today = new Date();
-      const periodo = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-
-      let details = [];
-      let missingReason = false;
-
-      globalProducts.forEach(p => {
-        const sysQty = currentBranchStock[p.id] || 0;
-        const physInput = document.getElementById(`inv-qty-${p.id}`);
-        const physQty = parseInt(physInput?.value) || 0;
-        const diff = physQty - sysQty;
-
-        let reasonVal = '';
-        if (diff !== 0) {
-          const selectReason = document.getElementById(`inv-reason-select-${p.id}`);
-          reasonVal = selectReason?.value || '';
-          if (!reasonVal) missingReason = true;
-        }
-
-        details.push({
-          product_id: p.id,
-          system_qty: sysQty,
-          physical_qty: physQty,
-          difference: diff,
-          reason: reasonVal
-        });
-      });
-
-      if (missingReason) {
-        return alert('Existen productos con diferencias de stock sin motivo justificado. Por favor selecciona el motivo antes de guardar.');
-      }
-
-      const { data: invData, error } = await supabaseClient
-        .from('inventarios')
-        .insert([{ building_id: buildingId, periodo: periodo, status: 'PENDIENTE', created_by: currentUser.email }])
-        .select()
-        .single();
-
-      if (error) return alert(`Error al guardar inventario: ${error.message}`);
-
-      const detailsWithId = details.map(d => ({ ...d, inventario_id: invData.id }));
-      await supabaseClient.from('inventarios_detalle').insert(detailsWithId);
-
-      alert('Inventario enviado a Coordinación para su revisión y aprobación de ajustes.');
-      closeNewInventoryModal();
-      loadInventories();
-    }
-
-    async function aprobarInventarioCoordinacion(inventarioId) {
-      if (!confirm('¿Confirmas aprobar el ajuste de este inventario? Se actualizará el stock real de la sucursal.')) return;
-
-      const { error } = await supabaseClient.rpc('aprobar_ajuste_inventario', {
-        p_inventario_id: inventarioId,
-        p_approved_by: currentUser.email
-      });
-
-      if (error) alert(`Error al aprobar inventario: ${error.message}`);
-      else {
-        alert('Ajuste de inventario aprobado e impactado en el stock correctamente.');
-        loadInventories();
-        loadStockAndPrices();
-        loadAuditLog();
-      }
-    }
-
     async function loadTransfers() {
       const buildingId = document.getElementById('branch-select').value;
       if (!buildingId) return;
@@ -1738,13 +1619,25 @@
         .or(`origin_building_id.eq.${buildingId},destination_building_id.eq.${buildingId}`)
         .order('created_at', { ascending: false });
 
-      if (error || !data) {
+      if (error || !data || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="p-2 text-center text-gray-500">Sin transferencias registradas.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = data.map(t => {
         const dateFormatted = new Date(t.created_at).toLocaleString('es-AR', { dateStyle: 'short' });
+        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">${t.status}</span>`;
+        if (t.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">APROBADO</span>`;
+        else if (t.status === 'RECHAZADO') statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[9px]">RECHAZADO</span>`;
+
+        let actionBtn = '-';
+        if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && t.status === 'SOLICITADO') {
+          actionBtn = `
+            <button onclick="approveTransfer(${t.id}, '${t.origin_building_id}', '${t.destination_building_id}', '${t.product_id}', ${t.qty})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar</button>
+            <button onclick="rejectTransfer(${t.id})" class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-red-700 ml-1">Rechazar</button>
+          `;
+        }
+
         return `
           <tr class="border-b hover:bg-gray-100 text-[11px]">
             <td class="p-1.5 font-bold">#${t.id}</td>
@@ -1753,106 +1646,87 @@
             <td class="p-1.5 uppercase font-bold text-blue-800">${t.destination_building_id}</td>
             <td class="p-1.5 font-medium capitalize">${t.product_id.replace(/-/g, ' ')}</td>
             <td class="p-1.5 text-center font-extrabold">${t.qty} u</td>
-            <td class="p-1.5 text-center"><span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">${t.status}</span></td>
+            <td class="p-1.5 text-center">${statusBadge}</td>
             <td class="p-1.5 text-gray-500">${t.notes || '-'}</td>
+            <td class="p-1.5 text-center">${actionBtn}</td>
           </tr>
         `;
       }).join('');
     }
 
-    async function openNewTransferModal() {
-      const panel = document.getElementById('transfer-form-panel');
-      const selectOrig = document.getElementById('trans-origin-select');
-      const selectProd = document.getElementById('trans-prod-select');
-      const currentBranch = document.getElementById('branch-select').value;
-      panel.classList.remove('hidden');
+    async function approveTransfer(transId, orig, dest, prod, qty) {
+      if (!confirm(`¿Confirma aprobar la transferencia #${transId}? Se descontará stock de ${orig} y se sumará a ${dest}.`)) return;
 
-      const { data: branches } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true);
-      const currentCountry = branches.find(b => b.id === currentBranch)?.country;
+      const { data: origStockData } = await supabaseClient.from('stock').select('qty').eq('building_id', orig).eq('product_id', prod).single();
+      const origQty = origStockData ? origStockData.qty : 0;
+      if (origQty < qty) return alert(`Error: La sucursal origen (${orig}) no tiene stock suficiente (${origQty} u) para ceder ${qty} u.`);
 
-      const validBranches = branches.filter(b => b.country === currentCountry && b.id !== currentBranch);
+      await supabaseClient.from('stock').update({ qty: origQty - qty }).eq('building_id', orig).eq('product_id', prod);
 
-      selectOrig.innerHTML = '<option value="">Seleccione depósito origen...</option>' + 
-        validBranches.map(b => `<option value="${b.id}">[${b.country}] ${b.name} ${b.id === 'martinez' ? '⭐ (Contingencia AR)' : ''}</option>`).join('');
+      const { data: destStockData } = await supabaseClient.from('stock').select('qty').eq('building_id', dest).eq('product_id', prod).single();
+      const destQty = destStockData ? destStockData.qty : 0;
+      await supabaseClient.from('stock').update({ qty: destQty + qty }).eq('building_id', dest).eq('product_id', prod);
 
-      selectProd.innerHTML = '<option value="">Seleccione producto...</option>' + 
-        globalProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      await supabaseClient.from('transferencias').update({ status: 'APROBADO' }).eq('id', transId);
 
-      document.getElementById('trans-stock-info').classList.add('hidden');
-      document.getElementById('trans-overstock-reason-container').classList.add('hidden');
+      alert('Transferencia aprobada e impactada en los stocks con éxito.');
+      loadTransfers();
+      loadStockAndPrices();
     }
 
-    async function onTransferOriginOrProdChange() {
-      const origBranch = document.getElementById('trans-origin-select').value;
-      const destBranch = document.getElementById('branch-select').value;
-      const prodId = document.getElementById('trans-prod-select').value;
-      const infoDiv = document.getElementById('trans-stock-info');
-      const reasonContainer = document.getElementById('trans-overstock-reason-container');
+    async function rejectTransfer(transId) {
+      if (!confirm('¿Confirma rechazar esta solicitud de transferencia?')) return;
+      await supabaseClient.from('transferencias').update({ status: 'RECHAZADO' }).eq('id', transId);
+      alert('Transferencia rechazada.');
+      loadTransfers();
+    }
 
-      transferDestHasOverstock = false;
+    async function loadConsolidatedMatrix() {
+      const thead = document.getElementById('consolidated-thead');
+      const tbody = document.getElementById('consolidated-tbody');
 
-      if (!origBranch || !prodId) {
-        infoDiv.classList.add('hidden');
-        reasonContainer.classList.add('hidden');
+      const { data: branches } = await supabaseClient.from('sucursales').select('id, name').eq('active', true).order('name');
+      const { data: stockData } = await supabaseClient.from('stock').select('*');
+
+      if (!branches || !stockData) {
+        tbody.innerHTML = `<tr><td class="p-2 text-center text-gray-500">Error al cargar datos consolidados.</td></tr>`;
         return;
       }
 
-      const { data: origData } = await supabaseClient.from('stock').select('qty').eq('building_id', origBranch).eq('product_id', prodId).single();
-      const origStock = origData ? origData.qty : 0;
+      thead.innerHTML = `
+        <tr>
+          <th class="p-2 sticky left-0 bg-slate-200 z-10">Insumo</th>
+          ${branches.map(b => `<th class="p-2 text-center">${b.name}</th>`).join('')}
+        </tr>
+      `;
 
-      const { data: destSugeridos } = await supabaseClient.rpc('obtener_sugerido_pedido', { p_building_id: destBranch });
-      const destProdInfo = destSugeridos ? destSugeridos.find(s => s.product_id === prodId) : null;
-      const destCob = destProdInfo ? destProdInfo.cobertura_dias : 0;
+      let stockMap = {};
+      stockData.forEach(s => {
+        if (!stockMap[s.product_id]) stockMap[s.product_id] = {};
+        stockMap[s.product_id][s.building_id] = s.qty;
+      });
 
-      infoDiv.classList.remove('hidden');
+      tbody.innerHTML = globalProducts.map(p => {
+        let rowCells = branches.map(b => {
+          let qty = (stockMap[p.id] && stockMap[p.id][b.id] !== undefined) ? stockMap[p.id][b.id] : 0;
+          
+          let cellStyle = "bg-emerald-50 text-emerald-900";
+          if (qty <= 10) {
+            cellStyle = "bg-red-100 text-red-800 font-extrabold";
+          } else if (qty >= 200) {
+            cellStyle = "bg-amber-100 text-amber-900 font-extrabold";
+          }
 
-      if (destCob > 45) {
-        transferDestHasOverstock = true;
-        reasonContainer.classList.remove('hidden');
-        infoDiv.className = 'mb-3 p-2 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300';
-        infoDiv.innerHTML = `⚠️ Origen disponible: <b>${origStock} u</b>. Tu sucursal ya posee <b>${destProdInfo.stock_actual} u</b> (${destCob} días de cobertura). Se requiere justificación de Sobrestock.`;
-      } else {
-        transferDestHasOverstock = false;
-        reasonContainer.classList.add('hidden');
-        infoDiv.className = 'mb-3 p-2 rounded text-xs font-semibold bg-blue-100 text-blue-900 border border-blue-300';
-        infoDiv.innerHTML = `ℹ Stock en Origen: <b>${origStock} u</b> | Stock en Tu Depósito: <b>${destProdInfo ? destProdInfo.stock_actual : 0} u</b> (${destCob} días de cobertura).`;
-      }
-    }
+          return `<td class="p-2 text-center ${cellStyle} border">${qty} u</td>`;
+        }).join('');
 
-    function closeNewTransferModal() {
-      document.getElementById('transfer-form-panel').classList.add('hidden');
-    }
-
-    async function submitTransfer() {
-      const destBranch = document.getElementById('branch-select').value;
-      const origBranch = document.getElementById('trans-origin-select').value;
-      const productId = document.getElementById('trans-prod-select').value;
-      const qty = parseInt(document.getElementById('trans-qty').value) || 0;
-      const reasonInput = document.getElementById('trans-overstock-reason').value.trim();
-
-      if (!origBranch || !productId || qty <= 0) return alert('Por favor completa todos los campos de la transferencia.');
-
-      if (transferDestHasOverstock && !reasonInput) {
-        return alert('Tu sucursal registra sobrestock de este insumo. Por favor ingresa la justificación obligatoria.');
-      }
-
-      const notesVal = transferDestHasOverstock ? `[Sobrestock Justificado]: ${reasonInput}` : '';
-
-      const { error } = await supabaseClient.from('transferencias').insert([{
-        origin_building_id: origBranch,
-        destination_building_id: destBranch,
-        product_id: productId,
-        qty: qty,
-        status: 'SOLICITADO',
-        requested_by: currentUser.email,
-        notes: notesVal
-      }]);
-
-      if (error) return alert(`Error al solicitar transferencia: ${error.message}`);
-
-      alert('Solicitud de transferencia registrada correctamente.');
-      closeNewTransferModal();
-      loadTransfers();
+        return `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2 font-bold capitalize text-slate-800 sticky left-0 bg-white border">${p.name}</td>
+            ${rowCells}
+          </tr>
+        `;
+      }).join('');
     }
 
     const savedUrl = localStorage.getItem('sb_url');
