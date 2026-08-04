@@ -268,9 +268,28 @@
           <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
             <div>
               <h2 class="text-base font-bold text-slate-800">Módulo de Recepción y Validación (RN-006)</h2>
-              <p class="text-[11px] text-gray-500">Gestión de remitos físicos con control y auditoría.</p>
+              <p class="text-[11px] text-gray-500">Gestión de remitos físicos con control y auditoría de la Intendencia.</p>
             </div>
-            <button id="btn-open-rec-modal" onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800 hidden">+ Registrar Remito Físico (Vigilador)</button>
+            <button id="btn-open-rec-modal" onclick="openNewReceptionModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">+ Registrar Remito Físico (Vigilador)</button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 mb-2 bg-gray-50 p-2 rounded border">
+            <div>
+              <label class="text-[10px] font-bold text-gray-600 block">Estado:</label>
+              <select id="rec-status-filter" onchange="loadRecepciones()" class="p-1 border rounded text-xs bg-white">
+                <option value="ALL">Todos los Estados</option>
+                <option value="PENDIENTE_VALIDACION">Pendiente Validación</option>
+                <option value="VALIDADO">Validado e Impactado</option>
+                <option value="RECHAZADO">Rechazado</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-gray-600 block">Período / Mes:</label>
+              <input type="month" id="rec-month-filter" onchange="loadRecepciones()" class="p-1 border rounded text-xs bg-white">
+            </div>
+            <div class="flex items-end">
+              <button onclick="clearRecFilters()" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-semibold hover:bg-gray-300">Limpiar Filtros</button>
+            </div>
           </div>
 
           <div class="overflow-x-auto bg-gray-50 rounded border max-h-64 overflow-y-auto shadow-sm mb-6">
@@ -292,7 +311,6 @@
             </table>
           </div>
 
-          <!-- Modal Carga Vigilador -->
           <div id="reception-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <h3 class="text-sm font-bold text-slate-800">Registro de Remito Físico (Vigilancia / Operativa)</h3>
@@ -318,6 +336,11 @@
               </div>
             </div>
 
+            <div class="mb-3">
+              <label class="block text-xs font-bold text-gray-700">Observaciones del Remito / Motivo de Diferencia:</label>
+              <input type="text" id="rec-notes" class="w-full p-2 border rounded text-xs" placeholder="Ej: Se reciben bultos sellados. Falta 1 u por proveedor">
+            </div>
+
             <h4 class="text-xs font-bold text-gray-700 mb-2">Conteo Físico de Insumos Recibidos:</h4>
             <div id="reception-items-list" class="space-y-1.5 mb-4 max-h-60 overflow-y-auto"></div>
 
@@ -327,7 +350,6 @@
             </div>
           </div>
 
-          <!-- Modal Auditoría Intendencia -->
           <div id="reception-audit-panel" class="hidden bg-slate-100 p-4 rounded border border-blue-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <div>
@@ -357,13 +379,13 @@
           <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
             <div>
               <h2 class="text-base font-bold text-slate-800">Módulo de Pedidos Mensuales</h2>
-              <p class="text-[11px] text-gray-500">Aprobación y consolidación de pedidos (RN-007, RN-011).</p>
+              <p class="text-[11px] text-gray-500">Confección y consulta de pedidos con Sugerido Inteligente a 1.5 meses de Cobertura (RN-007).</p>
             </div>
             <div class="flex gap-2">
-              <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">
+              <button id="btn-consolidate-ar" onclick="consolidateArgentinaOrders()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800 hidden">
                 📦 Consolidar Pedidos Argentina (RN-011)
               </button>
-              <button id="btn-create-order" onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700 hidden">
+              <button id="btn-create-order" onclick="openNewOrderModal()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">
                 + Confeccionar Pedido Mensual (Intendente)
               </button>
             </div>
@@ -389,7 +411,38 @@
             </table>
           </div>
 
-          <!-- Modal Detalle de Pedido -->
+          <div id="order-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 class="text-sm font-bold text-slate-800">Confección de Pedido Mensual (Intendencia)</h3>
+              <button onclick="closeNewOrderModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Período (Año-Mes):</label>
+                <input type="month" id="order-period" class="w-full p-1.5 border rounded text-xs bg-white" required>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Observaciones / Justificación:</label>
+                <input type="text" id="order-notes" class="w-full p-1.5 border rounded text-xs" placeholder="Ej: Pedido regular ajustado a cobertura de 1.5 meses">
+              </div>
+            </div>
+
+            <h4 class="text-xs font-bold text-gray-700 mb-2">Detalle de Insumos con Sugerido Inteligente (Objetivo: 1.5 Meses / 45 Días):</h4>
+            <div id="order-items-list" class="space-y-1.5 mb-4 max-h-60 overflow-y-auto"></div>
+
+            <div class="flex justify-between items-center border-t pt-3">
+              <div>
+                <span class="text-xs text-gray-600 block">Costo Estimado Total del Pedido:</span>
+                <span id="order-total-cost" class="text-sm font-extrabold text-emerald-700">$0.00</span>
+              </div>
+              <div class="space-x-2">
+                <button onclick="closeNewOrderModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
+                <button onclick="submitOrder()" class="bg-slate-800 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-slate-700">Enviar a Coordinación</button>
+              </div>
+            </div>
+          </div>
+
           <div id="order-detail-panel" class="hidden bg-slate-100 p-4 rounded border border-blue-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
               <div>
@@ -426,8 +479,9 @@
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-base font-bold text-slate-800">Módulo de Inventarios Físicos y Ajustes (EO-005)</h2>
-              <p class="text-[11px] text-gray-500">Aprobación de diferencias e inventarios informados por sucursales.</p>
+              <p class="text-[11px] text-gray-500">Los ajustes con diferencia requieren motivo obligatorio y aprobación de Coordinación.</p>
             </div>
+            <button onclick="openNewInventoryModal()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">+ Realizar Conteo Físico</button>
           </div>
 
           <div class="overflow-x-auto bg-gray-50 rounded border max-h-64 overflow-y-auto shadow-sm mb-6">
@@ -439,7 +493,7 @@
                   <th class="p-1.5">Período</th>
                   <th class="p-1.5">Realizado Por</th>
                   <th class="p-1.5 text-center">Estado</th>
-                  <th class="p-1.5">Observaciones / Motivos</th>
+                  <th class="p-1.5">Observaciones</th>
                   <th class="p-1.5 text-center">Acción (Coordinación)</th>
                 </tr>
               </thead>
@@ -449,36 +503,17 @@
             </table>
           </div>
 
-          <!-- Modal Detalle de Inventario a Aprobar -->
-          <div id="inventory-detail-panel" class="hidden bg-slate-100 p-4 rounded border border-blue-300 mb-6 shadow-sm">
+          <div id="inventory-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
             <div class="flex justify-between items-center mb-3 border-b pb-2">
-              <div>
-                <h3 class="text-sm font-bold text-slate-800" id="detail-inv-title">Detalle de Ajustes de Inventario</h3>
-                <p class="text-[11px] text-gray-600" id="detail-inv-subtitle"></p>
-              </div>
-              <button onclick="closeInventoryDetailModal()" class="text-xs text-gray-500 font-bold hover:text-gray-800">Cerrar [X]</button>
+              <h3 class="text-sm font-bold text-slate-800">Carga de Conteo Físico (Exige Motivo si hay Diferencias)</h3>
+              <button onclick="closeNewInventoryModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
             </div>
 
-            <div class="overflow-x-auto bg-white rounded border max-h-60 overflow-y-auto mb-4">
-              <table class="w-full text-left text-xs text-gray-600">
-                <thead class="bg-gray-200 text-gray-700 uppercase text-[9px]">
-                  <tr>
-                    <th class="p-2">Insumo</th>
-                    <th class="p-2 text-center">Stock Sistema</th>
-                    <th class="p-2 text-center">Conteo Físico</th>
-                    <th class="p-2 text-center">Diferencia</th>
-                    <th class="p-2">Motivo Declarado</th>
-                  </tr>
-                </thead>
-                <tbody id="detail-inv-items-body">
-                  <tr><td colspan="5" class="p-2 text-center text-gray-500">Cargando ítems...</td></tr>
-                </tbody>
-              </table>
-            </div>
+            <div id="inventory-items-list" class="space-y-2 mb-4 max-h-64 overflow-y-auto"></div>
 
-            <div class="flex justify-end space-x-2 border-t pt-2">
-              <button onclick="closeInventoryDetailModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cerrar</button>
-              <button id="btn-confirm-approve-inv" onclick="" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">✔ Confirmar y Aprobar Ajuste</button>
+            <div class="flex justify-end space-x-2 border-t pt-3">
+              <button onclick="closeNewInventoryModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
+              <button onclick="submitInventory()" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-emerald-700">Guardar Inventario para Revisión</button>
             </div>
           </div>
         </div>
@@ -488,8 +523,9 @@
           <div class="flex justify-between items-center mb-4">
             <div>
               <h2 class="text-base font-bold text-slate-800">Módulo de Transferencias entre Sucursales (RN-009)</h2>
-              <p class="text-[11px] text-gray-500">Supervisión y control de redistribuciones internas nacionales.</p>
+              <p class="text-[11px] text-gray-500">Solicitudes con validación de Sobrestock en Origen y Destino.</p>
             </div>
+            <button onclick="openNewTransferModal()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-800">+ Solicitar Transferencia</button>
           </div>
 
           <div class="overflow-x-auto bg-gray-50 rounded border max-h-64 overflow-y-auto shadow-sm mb-6">
@@ -504,29 +540,80 @@
                   <th class="p-1.5 text-center">Cant.</th>
                   <th class="p-1.5 text-center">Estado</th>
                   <th class="p-1.5">Justificación / Motivo</th>
-                  <th class="p-1.5 text-center">Acción (Coordinación)</th>
                 </tr>
               </thead>
               <tbody id="transfer-table-body">
-                <tr><td colspan="9" class="p-2 text-center text-gray-500">Cargando transferencias...</td></tr>
+                <tr><td colspan="8" class="p-2 text-center text-gray-500">Cargando transferencias...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="transfer-form-panel" class="hidden bg-slate-50 p-4 rounded border border-slate-300 mb-6 shadow-sm">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 class="text-sm font-bold text-slate-800">Solicitud de Transferencia de Insumos</h3>
+              <button onclick="closeNewTransferModal()" class="text-xs text-red-600 font-bold">Cerrar [X]</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Sucursal Origen:</label>
+                <select id="trans-origin-select" onchange="onTransferOriginOrProdChange()" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <option value="">Seleccione depósito origen...</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Insumo Solicitado:</label>
+                <select id="trans-prod-select" onchange="onTransferOriginOrProdChange()" class="w-full p-2 border rounded text-xs bg-white" required>
+                  <option value="">Seleccione producto...</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700">Cantidad Solicitada:</label>
+                <input type="number" id="trans-qty" min="1" class="w-full p-2 border rounded text-xs" required placeholder="Ej: 10">
+              </div>
+            </div>
+
+            <div id="trans-stock-info" class="hidden mb-3 p-2 rounded text-xs font-semibold"></div>
+
+            <div id="trans-overstock-reason-container" class="hidden mb-4 p-2.5 bg-amber-50 rounded border border-amber-300">
+              <label class="block text-xs font-bold text-amber-900 mb-1">⚠️ Justificación Obligatoria por Sobrestock Local:</label>
+              <p class="text-[10px] text-amber-800 mb-1.5">Tu sucursal ya dispone de stock suficiente ($>45$ días de cobertura). Ingresa la razón de la solicitud adicional:</p>
+              <input type="text" id="trans-overstock-reason" class="w-full p-1.5 border rounded text-xs bg-white" placeholder="Ej: Evento estacional extraordinario / Refuerzo programado de limpieza">
+            </div>
+
+            <div class="flex justify-end space-x-2 border-t pt-3">
+              <button onclick="closeNewTransferModal()" class="bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-bold">Cancelar</button>
+              <button onclick="submitTransfer()" class="bg-blue-700 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-blue-800">Enviar Solicitud</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Usuarios -->
+        <div id="view-users" class="hidden" style="display: none;">
+          <h2 class="text-lg font-bold text-slate-800 mb-4">Administración de Usuarios y Perfiles (RN-004)</h2>
+          <div class="overflow-x-auto bg-gray-50 rounded border">
+            <table class="w-full text-left text-xs text-gray-600">
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2">Email / Usuario</th>
+                  <th class="p-2">Rol Funcional</th>
+                  <th class="p-2">Sucursal Asignada</th>
+                  <th class="p-2">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="4" class="p-2 text-center text-gray-500">Cargando usuarios...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Matriz Consolidada -->
-        <div id="view-consolidated" class="hidden">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-lg font-bold text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
-            <div class="text-[11px] text-gray-500 flex gap-3 font-semibold">
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-100 border border-red-300 inline-block rounded"></span> Crítico (&le;10 u)</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-100 border border-amber-300 inline-block rounded"></span> Sobrestock (&ge;200 u)</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-50 border border-emerald-300 inline-block rounded"></span> Saludable</span>
-            </div>
-          </div>
-          <div class="overflow-x-auto bg-gray-50 rounded border shadow-sm max-h-96 overflow-y-auto">
+        <!-- Vista Consolidada -->
+        <div id="view-consolidated" class="hidden" style="display: none;">
+          <h2 class="text-lg font-bold mb-3 text-slate-800">Matriz Consolidada de Stock Multidepósito</h2>
+          <div class="overflow-x-auto bg-gray-50 rounded border">
             <table class="w-full text-left text-xs text-gray-600" id="consolidated-table">
-              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px] sticky top-0" id="consolidated-thead"></thead>
+              <thead class="bg-slate-200 text-slate-800 uppercase text-[10px]" id="consolidated-thead"></thead>
               <tbody id="consolidated-tbody">
                 <tr><td class="p-2 text-center text-gray-500">Cargando matriz de stock...</td></tr>
               </tbody>
@@ -549,6 +636,7 @@
     let currentBranchStock = {};
     let activeAuditRecId = null;
     let approvedOrdersCache = [];
+    let transferDestHasOverstock = false;
 
     function saveConfig() {
       const url = document.getElementById('supabase-url').value.trim();
@@ -616,8 +704,9 @@
       const isIntendente = (currentUserRole === 'INTENDENTE');
       const isVigilador = (currentUserRole === 'VIGILADOR');
 
-      document.getElementById('consume-form-panel').classList.toggle('hidden', !isVigilador);
+      document.getElementById('consume-form-panel').style.display = isVigilador ? 'block' : 'none';
       document.getElementById('stock-container-div').className = isVigilador ? 'md:col-span-2' : 'md:col-span-3';
+
       document.getElementById('dashboard-metrics-panel').classList.toggle('hidden', isVigilador);
 
       document.getElementById('view-staff-btn').style.display = isVigilador ? 'inline-block' : 'none';
@@ -625,11 +714,9 @@
       document.getElementById('view-orders-btn').style.display = (isIntendente || isSupervisor) ? 'inline-block' : 'none';
       document.getElementById('view-inv-btn').style.display = (isIntendente || isSupervisor) ? 'inline-block' : 'none';
       document.getElementById('view-trans-btn').style.display = (isIntendente || isSupervisor) ? 'inline-block' : 'none';
+      document.getElementById('view-users-btn').style.display = (currentUserRole === 'ADMINISTRADOR' || currentUserRole === 'JEFE') ? 'inline-block' : 'none';
 
-      document.getElementById('btn-consolidate-ar').style.display = isSupervisor ? 'inline-block' : 'none';
-      document.getElementById('btn-create-order').style.display = isIntendente ? 'inline-block' : 'none';
-      document.getElementById('th-cost-col').classList.toggle('hidden', isVigilador);
-      document.getElementById('total-cost-container').classList.toggle('hidden', isVigilador);
+      document.getElementById('btn-consolidate-ar').classList.toggle('hidden', !isSupervisor);
       document.getElementById('btn-export-csv').classList.toggle('hidden', !(isIntendente || isSupervisor));
       document.getElementById('btn-open-rec-modal').style.display = isVigilador ? 'inline-block' : 'none';
 
@@ -736,12 +823,12 @@
         if (selectLimp) {
           selectLimp.innerHTML = limpStaff.length > 0
             ? '<option value="">Seleccione personal de limpieza...</option>' + limpStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('')
-            : '<option value="">Sin personal de limpieza</option>';
+            : '<option value="">Sin personal de limpieza (Cargar en Personal Operativo)</option>';
         }
 
         const segOptions = segStaff.length > 0
           ? '<option value="">Seleccione personal de seguridad...</option>' + segStaff.map(p => `<option value="${p.full_name}">${p.full_name}</option>`).join('')
-          : '<option value="">Sin personal de seguridad</option>';
+          : '<option value="">Sin personal de seguridad (Cargar en Personal Operativo)</option>';
 
         if (selectSeg) selectSeg.innerHTML = segOptions;
         if (selectRecSeg) selectRecSeg.innerHTML = segOptions;
@@ -749,7 +836,7 @@
     }
 
     function switchView(view) {
-      const views = ['operational', 'receptions', 'staff', 'orders', 'inventories', 'transferencias', 'consolidated'];
+      const views = ['operational', 'receptions', 'staff', 'orders', 'inventories', 'transferencias', 'users', 'consolidated'];
       
       views.forEach(v => {
         const div = document.getElementById(`view-${v}`);
@@ -775,6 +862,7 @@
       else if (view === 'orders') loadOrders();
       else if (view === 'inventories') loadInventories();
       else if (view === 'transferencias') loadTransfers();
+      else if (view === 'users') loadUsersList();
       else if (view === 'consolidated') loadConsolidatedMatrix();
     }
 
@@ -788,7 +876,9 @@
       const { data: stockData, error: stockErr } = await supabaseClient.from('stock').select('product_id, qty').eq('building_id', buildingId);
       const tbody = document.getElementById('stock-table-body');
       const selectConsume = document.getElementById('product-select');
+      const costContainer = document.getElementById('total-cost-container');
       const totalVal = document.getElementById('total-cost-val');
+      const thCost = document.getElementById('th-cost-col');
 
       currentBranchStock = {};
 
@@ -835,7 +925,40 @@
         }).join('');
       }
 
-      totalVal.textContent = `$${grandTotalCost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+      if (canSeePrices) {
+        costContainer.classList.remove('hidden');
+        thCost.classList.remove('hidden');
+        totalVal.textContent = `$${grandTotalCost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+      } else {
+        costContainer.classList.add('hidden');
+        thCost.classList.add('hidden');
+      }
+    }
+
+    function validateConsumeQty() {
+      const productId = document.getElementById('product-select').value;
+      const qtyInput = document.getElementById('qty-input');
+      const msgSpan = document.getElementById('qty-avail-msg');
+      const btnSubmit = document.getElementById('btn-submit-consume');
+
+      if (!productId) {
+        msgSpan.textContent = '';
+        btnSubmit.disabled = false;
+        return;
+      }
+
+      const available = currentBranchStock[productId] || 0;
+      const entered = parseInt(qtyInput.value) || 0;
+
+      if (entered > available) {
+        msgSpan.textContent = `❌ Excede el disponible (${available} u)`;
+        msgSpan.className = 'text-[10px] text-red-600 font-bold block';
+        btnSubmit.disabled = true;
+      } else {
+        msgSpan.textContent = `Disponible en stock: ${available} u`;
+        msgSpan.className = 'text-[10px] text-emerald-700 font-semibold block';
+        btnSubmit.disabled = false;
+      }
     }
 
     async function loadAuditLog() {
@@ -849,20 +972,35 @@
       const tbody = document.getElementById('audit-table-body');
       let query = supabaseClient.from('audit_log').select('*').eq('building_id', buildingId);
 
-      if (actionFilter !== 'ALL') query = query.eq('action', actionFilter);
-      if (prodFilter !== 'ALL') query = query.eq('product_id', prodFilter);
+      if (actionFilter !== 'ALL') {
+        query = query.eq('action', actionFilter);
+      }
+
+      if (prodFilter !== 'ALL') {
+        query = query.eq('product_id', prodFilter);
+      }
+
       if (monthFilter) {
-        query = query.gte('created_at', `${monthFilter}-01T00:00:00`).lte('created_at', `${monthFilter}-31T23:59:59`);
+        const startDate = `${monthFilter}-01T00:00:00`;
+        const endDate = `${monthFilter}-31T23:59:59`;
+        query = query.gte('created_at', startDate).lte('created_at', endDate);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false }).limit(60);
-      if (error || !data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-2 text-gray-500 text-center">No hay registros de auditoría.</td></tr>`;
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-2 text-red-600 text-center">Error al cargar auditoría: ${error.message}</td></tr>`;
         return;
       }
 
-      currentAuditData = data;
-      tbody.innerHTML = data.map(row => {
+      currentAuditData = data || [];
+
+      if (currentAuditData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-2 text-gray-500 text-center">No hay registros con los filtros seleccionados.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = currentAuditData.map(row => {
         const dateFormatted = new Date(row.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
         const actionBadge = row.action === 'INGRESO'
           ? `<span class="bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded text-[9px]">INGRESO</span>`
@@ -903,25 +1041,49 @@
 
     async function loadRecepciones() {
       const buildingId = document.getElementById('branch-select').value;
+      const statusFilter = document.getElementById('rec-status-filter')?.value || 'ALL';
+      const monthFilter = document.getElementById('rec-month-filter')?.value || '';
+
       if (!buildingId) return;
 
       const tbody = document.getElementById('receptions-table-body');
-      const { data, error } = await supabaseClient.from('recepciones').select('*').eq('building_id', buildingId).order('created_at', { ascending: false });
+      let query = supabaseClient.from('recepciones').select('*').eq('building_id', buildingId);
 
-      if (error || !data || data.length === 0) {
+      if (statusFilter !== 'ALL') {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (monthFilter) {
+        const startDate = `${monthFilter}-01T00:00:00`;
+        const endDate = `${monthFilter}-31T23:59:59`;
+        query = query.gte('created_at', startDate).lte('created_at', endDate);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(60);
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-red-600 text-center">Error al cargar recepciones: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-gray-500 text-center">No hay remitos de recepción registrados.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = data.map(r => {
         const dateFormatted = new Date(r.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        
         let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">PENDIENTE VALIDACION</span>`;
-        if (r.status === 'VALIDADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">VALIDADO</span>`;
-        else if (r.status === 'RECHAZADO') statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[9px]">RECHAZADO</span>`;
+        if (r.status === 'VALIDADO') {
+          statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">VALIDADO E IMPACTADO</span>`;
+        } else if (r.status === 'RECHAZADO') {
+          statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[9px]">RECHAZADO</span>`;
+        }
 
         let actionBtn = '-';
-        if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && r.status === 'PENDIENTE_VALIDACION') {
-          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${r.registered_by}', '${(r.notes || '').replace(/'/g, "\\'")}')" class="bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar</button>`;
+        if ((currentUserRole === 'INTENDENTE' || currentUserRole === 'JEFE' || currentUserRole === 'COORDINADOR') && r.status === 'PENDIENTE_VALIDACION') {
+          actionBtn = `<button onclick="openAuditModal(${r.id}, '${r.supplier_remito}', '${r.registered_by}', '${(r.notes || '').replace(/'/g, "\\'")}')" class="bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Auditar y Validar (RN-006)</button>`;
         }
 
         return `
@@ -938,15 +1100,165 @@
       }).join('');
     }
 
+    function clearRecFilters() {
+      if (document.getElementById('rec-status-filter')) document.getElementById('rec-status-filter').value = 'ALL';
+      if (document.getElementById('rec-month-filter')) document.getElementById('rec-month-filter').value = '';
+      loadRecepciones();
+    }
+
+    async function loadStaffTable() {
+      const buildingId = document.getElementById('branch-select').value;
+      if (!buildingId) return;
+
+      const tbody = document.getElementById('staff-table-body');
+      const { data, error } = await supabaseClient
+        .from('personal_operativo')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('full_name');
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-red-600 text-center">Error al cargar personal: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-2 text-gray-500 text-center">No hay personal registrado en esta sucursal.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(s => {
+        const statusBadge = s.is_active
+          ? `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACTIVO</span>`
+          : `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">INACTIVO</span>`;
+
+        const actionBtn = s.is_active
+          ? `<button onclick="toggleStaffStatus(${s.id}, false)" class="text-red-600 font-bold hover:underline">Dar de Baja</button>`
+          : `<button onclick="toggleStaffStatus(${s.id}, true)" class="text-emerald-700 font-bold hover:underline">Reactivar</button>`;
+
+        return `
+          <tr class="border-b hover:bg-gray-100 text-xs">
+            <td class="p-2 font-semibold text-slate-800">${s.full_name}</td>
+            <td class="p-2 font-bold text-gray-600">${s.role_type}</td>
+            <td class="p-2">${statusBadge}</td>
+            <td class="p-2">${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openStaffModal() {
+      document.getElementById('staff-form-panel').classList.remove('hidden');
+    }
+
+    function closeStaffModal() {
+      document.getElementById('staff-form-panel').classList.add('hidden');
+    }
+
+    async function handleSaveStaff(e) {
+      e.preventDefault();
+      const buildingId = document.getElementById('branch-select').value;
+      const name = document.getElementById('staff-name').value.trim();
+      const role = document.getElementById('staff-role').value;
+
+      if (!name) return alert('Por favor ingresa nombre y apellido.');
+
+      const { error } = await supabaseClient.from('personal_operativo').insert([{
+        building_id: buildingId,
+        full_name: name,
+        role_type: role,
+        is_active: true
+      }]);
+
+      if (error) {
+        alert(`Error al guardar: ${error.message}`);
+      } else {
+        alert('Personal operativo registrado exitosamente.');
+        document.getElementById('staff-name').value = '';
+        closeStaffModal();
+        loadStaffTable();
+        loadStaffSelects();
+      }
+    }
+
+    async function toggleStaffStatus(staffId, newStatus) {
+      const { error } = await supabaseClient
+        .from('personal_operativo')
+        .update({ is_active: newStatus })
+        .eq('id', staffId);
+
+      if (error) alert(`Error al actualizar estado: ${error.message}`);
+      else {
+        loadStaffTable();
+        loadStaffSelects();
+      }
+    }
+
+    async function handleConsume(e) {
+      e.preventDefault();
+      const msgDiv = document.getElementById('form-msg');
+      const btn = document.getElementById('btn-submit-consume');
+      msgDiv.classList.add('hidden');
+      btn.disabled = true;
+
+      const buildingId = document.getElementById('branch-select').value;
+      const productId = document.getElementById('product-select').value;
+      const qty = parseInt(document.getElementById('qty-input').value);
+      const retiraLimpieza = document.getElementById('limpieza-select').value;
+      const informaSeguridad = document.getElementById('seguridad-select').value;
+      const note = document.getElementById('note-input').value;
+
+      if (!retiraLimpieza || !informaSeguridad) {
+        alert('Por favor selecciona tanto el personal de Limpieza (retira) como el personal de Seguridad (informa).');
+        btn.disabled = false;
+        return;
+      }
+
+      const informedByCombined = `Retiró: ${retiraLimpieza} | Informó: ${informaSeguridad}`;
+
+      const { data, error } = await supabaseClient.rpc('registrar_consumo', {
+        p_building_id: buildingId,
+        p_product_id: productId,
+        p_qty: qty,
+        p_informed_by: informedByCombined,
+        p_registered_by: currentUser.email,
+        p_note: note
+      });
+
+      if (error) {
+        msgDiv.className = 'mt-2 text-xs p-1.5 rounded bg-red-100 text-red-700 border border-red-200';
+        msgDiv.textContent = `Error: ${error.message}`;
+        msgDiv.classList.remove('hidden');
+      } else {
+        msgDiv.className = 'mt-2 text-xs p-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200';
+        msgDiv.textContent = 'Consumo registrado exitosamente.';
+        msgDiv.classList.remove('hidden');
+        document.getElementById('consumption-form').reset();
+        document.getElementById('qty-avail-msg').textContent = '';
+        loadStockAndPrices();
+        loadAuditLog();
+      }
+      btn.disabled = false;
+    }
+
     async function loadOrders() {
       const buildingId = document.getElementById('branch-select').value;
       if (!buildingId) return;
 
       const tbody = document.getElementById('orders-table-body');
-      const { data, error } = await supabaseClient.from('pedidos').select('*').eq('building_id', buildingId).order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-2 text-gray-500 text-center">No hay pedidos registrados.</td></tr>`;
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-2 text-red-600 text-center">Error al cargar pedidos: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-2 text-gray-500 text-center">No hay pedidos registrados para esta sucursal.</td></tr>`;
         return;
       }
 
@@ -955,7 +1267,7 @@
         if (o.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">APROBADO</span>`;
         else if (o.status === 'CONSOLIDADO') statusBadge = `<span class="bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded text-[9px]">CONSOLIDADO</span>`;
 
-        let actionBtn = `<button onclick="openOrderDetailModal(${o.id}, '${o.periodo}', '${o.status}', '${o.total_estimated_cost}')" class="bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-800">Ver Detalle</button>`;
+        let actionBtn = `<button onclick="openOrderDetailModal(${o.id}, '${o.periodo}', '${o.status}', '${o.total_estimated_cost}')" class="bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-800">🔍 Ver Detalle</button>`;
         
         if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && o.status === 'PENDIENTE') {
           actionBtn += ` <button onclick="approveOrder(${o.id})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar</button>`;
@@ -976,27 +1288,6 @@
       }).join('');
     }
 
-    async function approveOrder(orderId) {
-      if (!confirm(`¿Confirma la aprobación del pedido #${orderId}?`)) return;
-      const { error } = await supabaseClient.from('pedidos').update({ status: 'APROBADO', approved_by: currentUser.email }).eq('id', orderId);
-      if (error) alert(`Error al aprobar: ${error.message}`);
-      else {
-        alert('Pedido aprobado con éxito.');
-        loadOrders();
-      }
-    }
-
-    async function consolidateArgentinaOrders() {
-      if (!confirm('¿Confirma consolidar todos los pedidos pendientes/aprobados de las sucursales de Argentina (RN-011)?')) return;
-      
-      const { error } = await supabaseClient.from('pedidos').update({ status: 'CONSOLIDADO', approved_by: currentUser.email + ' (Consolidado AR)' }).eq('status', 'APROBADO');
-      if (error) alert(`Error al consolidar: ${error.message}`);
-      else {
-        alert('Pedidos de Argentina consolidados correctamente en solicitud única al proveedor.');
-        loadOrders();
-      }
-    }
-
     async function openOrderDetailModal(orderId, periodo, status, totalCost) {
       const panel = document.getElementById('order-detail-panel');
       const title = document.getElementById('detail-order-title');
@@ -1007,24 +1298,336 @@
       title.textContent = `Detalle de Pedido #${orderId} (Período: ${periodo})`;
       subtitle.textContent = `Estado: ${status} | Costo Estimado Total: $${parseFloat(totalCost).toFixed(2)}`;
 
-      const { data: details } = await supabaseClient.from('pedidos_detalle').select('*').eq('pedido_id', orderId);
-      if (!details) {
-        itemsBody.innerHTML = `<tr><td colspan="4" class="p-2 text-center text-gray-500">Sin ítems.</td></tr>`;
+      const { data: details, error } = await supabaseClient
+        .from('pedidos_detalle')
+        .select('*')
+        .eq('pedido_id', orderId);
+
+      if (error || !details) {
+        itemsBody.innerHTML = `<tr><td colspan="4" class="p-2 text-red-600 text-center">Error al cargar detalle del pedido.</td></tr>`;
         return;
       }
 
-      itemsBody.innerHTML = details.map(d => `
-        <tr class="border-b hover:bg-gray-50">
-          <td class="p-2 font-semibold capitalize text-slate-800">${d.product_id.replace(/-/g, ' ')}</td>
-          <td class="p-2 text-center font-bold">${d.qty_requested} u</td>
-          <td class="p-2 text-right">$${parseFloat(d.unit_price || 0).toFixed(2)}</td>
-          <td class="p-2 text-right font-bold text-emerald-700">$${parseFloat(d.subtotal || 0).toFixed(2)}</td>
-        </tr>
-      `).join('');
+      itemsBody.innerHTML = details.map(d => {
+        const prodName = d.product_id.replace(/-/g, ' ');
+        return `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2 font-semibold capitalize text-slate-800">${prodName}</td>
+            <td class="p-2 text-center font-bold">${d.qty_requested} u</td>
+            <td class="p-2 text-right">$${parseFloat(d.unit_price || 0).toFixed(2)}</td>
+            <td class="p-2 text-right font-bold text-emerald-700">$${parseFloat(d.subtotal || 0).toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function closeOrderDetailModal() {
       document.getElementById('order-detail-panel').classList.add('hidden');
+    }
+
+    async function openNewOrderModal() {
+      const buildingId = document.getElementById('branch-select').value;
+      const panel = document.getElementById('order-form-panel');
+      const itemsList = document.getElementById('order-items-list');
+      panel.classList.remove('hidden');
+
+      const today = new Date();
+      document.getElementById('order-period').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+      try {
+        const { data: sugeridos, error } = await supabaseClient.rpc('obtener_sugerido_pedido', { p_building_id: buildingId });
+
+        if (error || !sugeridos) {
+          itemsList.innerHTML = '<p class="text-xs text-red-600 p-2">Error al calcular sugeridos de pedido.</p>';
+          return;
+        }
+
+        itemsList.innerHTML = sugeridos.map(s => {
+          const prodName = s.product_id.replace(/-/g, ' ');
+          const cobDisplay = s.cobertura_dias === 0.0 ? 'Sin Stock' : `${s.cobertura_dias} días`;
+
+          return `
+            <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-300 text-xs">
+              <div class="w-1/2">
+                <span class="font-bold text-slate-800 capitalize block">${prodName}</span>
+                <span class="text-[10px] text-gray-500">
+                  Stock: <b>${s.stock_actual} u</b> | Consumo/Día: <b>${s.avg_daily_consumption} u</b> | Cobertura: <b>${cobDisplay}</b>
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">Sugerido: ${s.qty_sugerida} u</span>
+                <input type="number" id="order-qty-${s.product_id}" data-price="${s.unit_price}" min="0" value="${s.qty_sugerida}" onchange="calculateOrderTotal()" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        calculateOrderTotal();
+      } catch (e) {
+        itemsList.innerHTML = '<p class="text-xs text-red-600 p-2">Error al conectar con el servidor.</p>';
+      }
+    }
+
+    function closeNewOrderModal() {
+      document.getElementById('order-form-panel').classList.add('hidden');
+    }
+
+    function calculateOrderTotal() {
+      let grandTotal = 0;
+      globalProducts.forEach(p => {
+        const input = document.getElementById(`order-qty-${p.id}`);
+        if (input) {
+          const qty = parseInt(input.value) || 0;
+          const uPrice = parseFloat(input.getAttribute('data-price')) || 0;
+          grandTotal += (qty * uPrice);
+        }
+      });
+      document.getElementById('order-total-cost').textContent = `$${grandTotal.toFixed(2)}`;
+    }
+
+    async function submitOrder() {
+      const buildingId = document.getElementById('branch-select').value;
+      const periodo = document.getElementById('order-period').value;
+      const notes = document.getElementById('order-notes').value;
+
+      if (!periodo) return alert('Por favor selecciona el período.');
+
+      let totalCost = 0;
+      let itemsToInsert = [];
+
+      globalProducts.forEach(p => {
+        const input = document.getElementById(`order-qty-${p.id}`);
+        const qty = parseInt(input?.value) || 0;
+        if (qty > 0) {
+          const uPrice = parseFloat(input.getAttribute('data-price')) || 0;
+          const subtotal = qty * uPrice;
+          totalCost += subtotal;
+          itemsToInsert.push({ product_id: p.id, qty_requested: qty, unit_price: uPrice, subtotal });
+        }
+      });
+
+      if (itemsToInsert.length === 0) return alert('Debes solicitar al menos 1 producto.');
+
+      const { data: orderData, error: orderErr } = await supabaseClient
+        .from('pedidos')
+        .insert([{
+          building_id: buildingId,
+          periodo: periodo,
+          status: 'PENDIENTE',
+          created_by: currentUser.email,
+          total_estimated_cost: totalCost,
+          notes: notes
+        }])
+        .select()
+        .single();
+
+      if (orderErr) return alert(`Error al crear pedido: ${orderErr.message}`);
+
+      const detailsWithId = itemsToInsert.map(item => ({ ...item, pedido_id: orderData.id }));
+      await supabaseClient.from('pedidos_detalle').insert(detailsWithId);
+
+      alert('Pedido mensual enviado a la Coordinación con éxito.');
+      closeNewOrderModal();
+      loadOrders();
+    }
+
+    async function openNewReceptionModal() {
+      const buildingId = document.getElementById('branch-select').value;
+      const panel = document.getElementById('reception-form-panel');
+      const selectOrder = document.getElementById('rec-order-select');
+      panel.classList.remove('hidden');
+
+      const { data: orders } = await supabaseClient
+        .from('pedidos')
+        .select('id, periodo, total_estimated_cost')
+        .eq('building_id', buildingId)
+        .in('status', ['APROBADO', 'CONSOLIDADO']);
+
+      approvedOrdersCache = orders || [];
+
+      selectOrder.innerHTML = '<option value="">Sin pedido asociado (Entrega Directa)</option>' +
+        approvedOrdersCache.map(o => `<option value="${o.id}">Pedido #${o.id} (${o.periodo})</option>`).join('');
+
+      renderReceptionItems(globalProducts.map(p => ({ product_id: p.id, qty: 0 })));
+    }
+
+    async function onOrderSelectForReception() {
+      const orderId = document.getElementById('rec-order-select').value;
+      if (!orderId) {
+        renderReceptionItems(globalProducts.map(p => ({ product_id: p.id, qty: 0 })));
+        return;
+      }
+
+      const { data: details } = await supabaseClient
+        .from('pedidos_detalle')
+        .select('product_id, qty_requested')
+        .eq('pedido_id', orderId);
+
+      if (details) {
+        let mapQty = {};
+        details.forEach(d => { mapQty[d.product_id] = d.qty_requested; });
+
+        renderReceptionItems(globalProducts.map(p => ({
+          product_id: p.id,
+          qty: mapQty[p.id] || 0
+        })));
+      }
+    }
+
+    function renderReceptionItems(items) {
+      const itemsList = document.getElementById('reception-items-list');
+      itemsList.innerHTML = items.map(item => {
+        const prod = globalProducts.find(p => p.id === item.product_id);
+        const name = prod ? prod.name : item.product_id.replace(/-/g, ' ');
+
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-300 text-xs">
+            <span class="font-semibold capitalize text-slate-800">${name}</span>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-bold text-gray-700">Cantidad Contada:</label>
+              <input type="number" id="rec-qty-${item.product_id}" min="0" value="${item.qty}" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function closeNewReceptionModal() {
+      document.getElementById('reception-form-panel').classList.add('hidden');
+    }
+
+    async function submitReception() {
+      const buildingId = document.getElementById('branch-select').value;
+      const orderId = document.getElementById('rec-order-select').value || null;
+      const remito = document.getElementById('rec-remito').value.trim();
+      const seguridadInforma = document.getElementById('rec-seguridad-select').value;
+      const notesInput = document.getElementById('rec-notes').value.trim();
+
+      if (!remito) return alert('Por favor ingresa el N° de Remito del Proveedor.');
+      if (!seguridadInforma) return alert('Por favor selecciona el Personal de Seguridad que informa la recepción.');
+
+      let itemsToInsert = [];
+      globalProducts.forEach(p => {
+        const input = document.getElementById(`rec-qty-${p.id}`);
+        const qty = parseInt(input?.value) || 0;
+        if (qty > 0) {
+          itemsToInsert.push({ product_id: p.id, qty_received: qty });
+        }
+      });
+
+      if (itemsToInsert.length === 0) return alert('Debes ingresar la cantidad de al menos 1 producto recibido.');
+
+      const notesCombined = `Informado por (Seguridad): ${seguridadInforma}` + (notesInput ? ` | Obs: ${notesInput}` : '');
+
+      const { data: recData, error: recErr } = await supabaseClient
+        .from('recepciones')
+        .insert([{
+          building_id: buildingId,
+          pedido_id: orderId,
+          supplier_remito: remito,
+          status: 'PENDIENTE_VALIDACION',
+          registered_by: `${currentUser.email} (${seguridadInforma})`,
+          notes: notesCombined
+        }])
+        .select()
+        .single();
+
+      if (recErr) return alert(`Error al registrar recepción: ${recErr.message}`);
+
+      const detailsWithId = itemsToInsert.map(item => ({ ...item, recepcion_id: recData.id }));
+      await supabaseClient.from('recepciones_detalle').insert(detailsWithId);
+
+      alert('Recepción registrada con éxito. Estado: PENDIENTE DE VALIDACIÓN POR INTENDENCIA (RN-006).');
+      closeNewReceptionModal();
+      loadRecepciones();
+    }
+
+    async function openAuditModal(recId, remito, registeredBy, notes) {
+      activeAuditRecId = recId;
+      const panel = document.getElementById('reception-audit-panel');
+      const title = document.getElementById('audit-rec-title');
+      const subtitle = document.getElementById('audit-rec-subtitle');
+      const itemsContainer = document.getElementById('audit-rec-items');
+
+      title.textContent = `Auditoría de Recepción #${recId} - Remito N°: ${remito}`;
+      subtitle.textContent = `Registrado por: ${registeredBy} | Detalles: ${notes || 'Sin observaciones'}`;
+
+      const { data: details, error } = await supabaseClient
+        .from('recepciones_detalle')
+        .select('*')
+        .eq('recepcion_id', recId);
+
+      if (error || !details) return alert('Error al cargar detalle del remito.');
+
+      itemsContainer.innerHTML = details.map(d => {
+        const prodName = d.product_id.replace(/-/g, ' ');
+        return `
+          <div class="flex items-center justify-between p-2 bg-white rounded border border-gray-300 text-xs">
+            <div>
+              <span class="font-bold text-slate-800 capitalize block">${prodName}</span>
+              <span class="text-[10px] text-gray-500">Cantidad Declarada por Vigilancia</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-bold text-slate-700">Cantidad Aprobada:</label>
+              <input type="number" id="audit-qty-${d.id}" data-detail-id="${d.id}" min="0" value="${d.qty_received}" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      panel.classList.remove('hidden');
+    }
+
+    function closeAuditModal() {
+      document.getElementById('reception-audit-panel').classList.add('hidden');
+      activeAuditRecId = null;
+    }
+
+    async function confirmarValidacionIntendencia() {
+      if (!activeAuditRecId) return;
+
+      const inputs = document.querySelectorAll('[id^="audit-qty-"]');
+      for (let input of inputs) {
+        const detailId = input.getAttribute('data-detail-id');
+        const newQty = parseInt(input.value) || 0;
+        await supabaseClient.from('recepciones_detalle').update({ qty_received: newQty }).eq('id', detailId);
+      }
+
+      const { data, error } = await supabaseClient.rpc('validar_recepcion', {
+        p_recepcion_id: activeAuditRecId,
+        p_validated_by: currentUser.email
+      });
+
+      if (error) {
+        alert(`Error al validar: ${error.message}`);
+      } else {
+        alert('Recepción auditada y validada correctamente. El stock ha sido incrementado.');
+        closeAuditModal();
+        loadRecepciones();
+        loadStockAndPrices();
+        loadAuditLog();
+        calculateDashboardMetrics();
+      }
+    }
+
+    async function rechazarRecepcionAction() {
+      if (!activeAuditRecId) return;
+      const reason = prompt('Por favor ingresa la razón o justificación del rechazo del remito:');
+      if (!reason) return;
+
+      const { data, error } = await supabaseClient.rpc('rechazar_recepcion', {
+        p_recepcion_id: activeAuditRecId,
+        p_validated_by: currentUser.email,
+        p_reason: reason
+      });
+
+      if (error) {
+        alert(`Error al rechazar: ${error.message}`);
+      } else {
+        alert('Recepción rechazada correctamente. No se ha modificado el stock.');
+        closeAuditModal();
+        loadRecepciones();
+      }
     }
 
     async function loadInventories() {
@@ -1032,7 +1635,11 @@
       if (!buildingId) return;
 
       const tbody = document.getElementById('inventory-table-body');
-      const { data, error } = await supabaseClient.from('inventarios').select('*').eq('building_id', buildingId).order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('inventarios')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-2 text-center text-gray-500">Sin inventarios registrados.</td></tr>`;
@@ -1041,12 +1648,15 @@
 
       tbody.innerHTML = data.map(i => {
         const dateFormatted = new Date(i.created_at).toLocaleString('es-AR', { dateStyle: 'short' });
+        
         let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">PENDIENTE APROBACION</span>`;
-        if (i.status === 'APROBADO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">APROBADO E IMPACTADO</span>`;
+        if (i.status === 'APROBADO') {
+          statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">APROBADO E IMPACTADO</span>`;
+        }
 
         let actionBtn = '-';
         if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && i.status === 'PENDIENTE') {
-          actionBtn = `<button onclick="openInventoryDetailModal(${i.id}, '${i.periodo}', '${i.created_by}')" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">🔍 Ver Detalle y Aprobar</button>`;
+          actionBtn = `<button onclick="aprobarInventarioCoordinacion(${i.id})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar Ajuste</button>`;
         }
 
         return `
@@ -1056,48 +1666,117 @@
             <td class="p-1.5 font-mono">${i.periodo}</td>
             <td class="p-1.5 text-gray-600">${i.created_by}</td>
             <td class="p-1.5 text-center">${statusBadge}</td>
-            <td class="p-1.5 text-gray-500">${i.notes || 'Revisión pendiente'}</td>
+            <td class="p-1.5 text-gray-500">${i.notes || '-'}</td>
             <td class="p-1.5 text-center">${actionBtn}</td>
           </tr>
         `;
       }).join('');
     }
 
-    async function openInventoryDetailModal(invId, periodo, createdBy) {
-      const panel = document.getElementById('inventory-detail-panel');
-      const title = document.getElementById('detail-inv-title');
-      const subtitle = document.getElementById('detail-inv-subtitle');
-      const itemsBody = document.getElementById('detail-inv-items-body');
-      const btnApprove = document.getElementById('btn-confirm-approve-inv');
+    function openNewInventoryModal() {
+      const panel = document.getElementById('inventory-form-panel');
+      const itemsList = document.getElementById('inventory-items-list');
       panel.classList.remove('hidden');
 
-      title.textContent = `Inventario #${invId} (Período: ${periodo})`;
-      subtitle.textContent = `Realizado por: ${createdBy}`;
-      btnApprove.setAttribute('onclick', `aprobarInventarioCoordinacion(${invId})`);
-
-      const { data: details } = await supabaseClient.from('inventarios_detalle').select('*').eq('inventario_id', invId);
-      if (!details) {
-        itemsBody.innerHTML = `<tr><td colspan="5" class="p-2 text-center text-gray-500">Sin datos.</td></tr>`;
-        return;
-      }
-
-      itemsBody.innerHTML = details.map(d => `
-        <tr class="border-b hover:bg-gray-50">
-          <td class="p-2 font-semibold capitalize text-slate-800">${d.product_id.replace(/-/g, ' ')}</td>
-          <td class="p-2 text-center font-bold">${d.system_qty} u</td>
-          <td class="p-2 text-center font-extrabold text-blue-800">${d.physical_qty} u</td>
-          <td class="p-2 text-center font-bold ${d.difference < 0 ? 'text-red-600' : 'text-emerald-700'}">${d.difference} u</td>
-          <td class="p-2 text-gray-700 font-medium">${d.reason || 'Sin desvío'}</td>
-        </tr>
-      `).join('');
+      itemsList.innerHTML = globalProducts.map(p => {
+        const currentQty = currentBranchStock[p.id] || 0;
+        return `
+          <div class="p-2 bg-white rounded border border-gray-300 text-xs">
+            <div class="flex items-center justify-between mb-1">
+              <div>
+                <span class="font-bold text-slate-800 capitalize block">${p.name}</span>
+                <span class="text-[10px] text-gray-500">Stock Sistema: <b>${currentQty} u</b></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-[10px] font-bold text-slate-700">Conteo Físico:</label>
+                <input type="number" id="inv-qty-${p.id}" data-sys-qty="${currentQty}" min="0" value="${currentQty}" onchange="checkInventoryDiff('${p.id}')" class="w-20 p-1 border rounded text-xs text-center font-extrabold bg-amber-50">
+              </div>
+            </div>
+            <div id="inv-reason-container-${p.id}" class="hidden mt-1 border-t pt-1">
+              <label class="block text-[10px] font-bold text-red-700">⚠️ Se detectó diferencia. Seleccione o ingrese el motivo obligatorio:</label>
+              <select id="inv-reason-select-${p.id}" class="w-full p-1 border rounded text-xs bg-red-50 font-semibold text-red-900 mt-0.5">
+                <option value="">Seleccione motivo del desvío...</option>
+                <option value="Merma de Insumos">Merma de Insumos</option>
+                <option value="Rotura o Daño Físico">Rotura o Daño Físico</option>
+                <option value="Vencimiento de Producto">Vencimiento de Producto</option>
+                <option value="Desvío de Conteo / Ajuste">Desvío de Conteo / Ajuste</option>
+                <option value="Error de Registro Operativo">Error de Registro Operativo</option>
+              </select>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    function closeInventoryDetailModal() {
-      document.getElementById('inventory-detail-panel').classList.add('hidden');
+    function checkInventoryDiff(productId) {
+      const input = document.getElementById(`inv-qty-${productId}`);
+      const sysQty = parseInt(input.getAttribute('data-sys-qty')) || 0;
+      const physQty = parseInt(input.value) || 0;
+      const reasonDiv = document.getElementById(`inv-reason-container-${productId}`);
+
+      if (sysQty !== physQty) {
+        reasonDiv.classList.remove('hidden');
+      } else {
+        reasonDiv.classList.add('hidden');
+      }
+    }
+
+    function closeNewInventoryModal() {
+      document.getElementById('inventory-form-panel').classList.add('hidden');
+    }
+
+    async function submitInventory() {
+      const buildingId = document.getElementById('branch-select').value;
+      const today = new Date();
+      const periodo = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+      let details = [];
+      let missingReason = false;
+
+      globalProducts.forEach(p => {
+        const sysQty = currentBranchStock[p.id] || 0;
+        const physInput = document.getElementById(`inv-qty-${p.id}`);
+        const physQty = parseInt(physInput?.value) || 0;
+        const diff = physQty - sysQty;
+
+        let reasonVal = '';
+        if (diff !== 0) {
+          const selectReason = document.getElementById(`inv-reason-select-${p.id}`);
+          reasonVal = selectReason?.value || '';
+          if (!reasonVal) missingReason = true;
+        }
+
+        details.push({
+          product_id: p.id,
+          system_qty: sysQty,
+          physical_qty: physQty,
+          difference: diff,
+          reason: reasonVal
+        });
+      });
+
+      if (missingReason) {
+        return alert('Existen productos con diferencias de stock sin motivo justificado. Por favor selecciona el motivo antes de guardar.');
+      }
+
+      const { data: invData, error } = await supabaseClient
+        .from('inventarios')
+        .insert([{ building_id: buildingId, periodo: periodo, status: 'PENDIENTE', created_by: currentUser.email }])
+        .select()
+        .single();
+
+      if (error) return alert(`Error al guardar inventario: ${error.message}`);
+
+      const detailsWithId = details.map(d => ({ ...d, inventario_id: invData.id }));
+      await supabaseClient.from('inventarios_detalle').insert(detailsWithId);
+
+      alert('Inventario enviado a Coordinación para su revisión y aprobación de ajustes.');
+      closeNewInventoryModal();
+      loadInventories();
     }
 
     async function aprobarInventarioCoordinacion(inventarioId) {
-      if (!confirm('¿Confirma aprobar el ajuste de este inventario? Se actualizará el stock real de la sucursal.')) return;
+      if (!confirm('¿Confirmas aprobar el ajuste de este inventario? Se actualizará el stock real de la sucursal.')) return;
 
       const { error } = await supabaseClient.rpc('aprobar_ajuste_inventario', {
         p_inventario_id: inventarioId,
@@ -1107,7 +1786,6 @@
       if (error) alert(`Error al aprobar inventario: ${error.message}`);
       else {
         alert('Ajuste de inventario aprobado e impactado en el stock correctamente.');
-        closeInventoryDetailModal();
         loadInventories();
         loadStockAndPrices();
         loadAuditLog();
@@ -1119,27 +1797,19 @@
       if (!buildingId) return;
 
       const tbody = document.getElementById('transfer-table-body');
-      const { data, error } = await supabaseClient.from('transferencias').select('*').or(`origin_building_id.eq.${buildingId},destination_building_id.eq.${buildingId}`).order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('transferencias')
+        .select('*')
+        .or(`origin_building_id.eq.${buildingId},destination_building_id.eq.${buildingId}`)
+        .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="p-2 text-center text-gray-500">Sin transferencias registradas.</td></tr>`;
+      if (error || !data) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-2 text-center text-gray-500">Sin transferencias registradas.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = data.map(t => {
         const dateFormatted = new Date(t.created_at).toLocaleString('es-AR', { dateStyle: 'short' });
-        let statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">${t.status}</span>`;
-        if (t.status === 'APROBADO' || t.status === 'RECIBIDO') statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded text-[9px]">APROBADO</span>`;
-        else if (t.status === 'RECHAZADO') statusBadge = `<span class="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[9px]">RECHAZADO</span>`;
-
-        let actionBtn = '-';
-        if ((currentUserRole === 'COORDINADOR' || currentUserRole === 'JEFE') && t.status === 'SOLICITADO') {
-          actionBtn = `
-            <button onclick="approveTransfer(${t.id}, '${t.origin_building_id}', '${t.destination_building_id}', '${t.product_id}', ${t.qty})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-emerald-700">Aprobar</button>
-            <button onclick="rejectTransfer(${t.id})" class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-red-700 ml-1">Rechazar</button>
-          `;
-        }
-
         return `
           <tr class="border-b hover:bg-gray-100 text-[11px]">
             <td class="p-1.5 font-bold">#${t.id}</td>
@@ -1148,87 +1818,106 @@
             <td class="p-1.5 uppercase font-bold text-blue-800">${t.destination_building_id}</td>
             <td class="p-1.5 font-medium capitalize">${t.product_id.replace(/-/g, ' ')}</td>
             <td class="p-1.5 text-center font-extrabold">${t.qty} u</td>
-            <td class="p-1.5 text-center">${statusBadge}</td>
+            <td class="p-1.5 text-center"><span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[9px]">${t.status}</span></td>
             <td class="p-1.5 text-gray-500">${t.notes || '-'}</td>
-            <td class="p-1.5 text-center">${actionBtn}</td>
           </tr>
         `;
       }).join('');
     }
 
-    async function approveTransfer(transId, orig, dest, prod, qty) {
-      if (!confirm(`¿Confirma aprobar la transferencia #${transId}? Se descontará stock de ${orig} y se sumará a ${dest}.`)) return;
+    async function openNewTransferModal() {
+      const panel = document.getElementById('transfer-form-panel');
+      const selectOrig = document.getElementById('trans-origin-select');
+      const selectProd = document.getElementById('trans-prod-select');
+      const currentBranch = document.getElementById('branch-select').value;
+      panel.classList.remove('hidden');
 
-      const { data: origStockData } = await supabaseClient.from('stock').select('qty').eq('building_id', orig).eq('product_id', prod).single();
-      const origQty = origStockData ? origStockData.qty : 0;
-      if (origQty < qty) return alert(`Error: La sucursal origen (${orig}) no tiene stock suficiente (${origQty} u) para ceder ${qty} u.`);
+      const { data: branches } = await supabaseClient.from('sucursales').select('id, name, country').eq('active', true);
+      const currentCountry = branches.find(b => b.id === currentBranch)?.country;
 
-      await supabaseClient.from('stock').update({ qty: origQty - qty }).eq('building_id', orig).eq('product_id', prod);
+      const validBranches = branches.filter(b => b.country === currentCountry && b.id !== currentBranch);
 
-      const { data: destStockData } = await supabaseClient.from('stock').select('qty').eq('building_id', dest).eq('product_id', prod).single();
-      const destQty = destStockData ? destStockData.qty : 0;
-      await supabaseClient.from('stock').update({ qty: destQty + qty }).eq('building_id', dest).eq('product_id', prod);
+      selectOrig.innerHTML = '<option value="">Seleccione depósito origen...</option>' + 
+        validBranches.map(b => `<option value="${b.id}">[${b.country}] ${b.name} ${b.id === 'martinez' ? '⭐ (Contingencia AR)' : ''}</option>`).join('');
 
-      await supabaseClient.from('transferencias').update({ status: 'APROBADO' }).eq('id', transId);
+      selectProd.innerHTML = '<option value="">Seleccione producto...</option>' + 
+        globalProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
-      alert('Transferencia aprobada e impactada en los stocks con éxito.');
-      loadTransfers();
-      loadStockAndPrices();
+      document.getElementById('trans-stock-info').classList.add('hidden');
+      document.getElementById('trans-overstock-reason-container').classList.add('hidden');
     }
 
-    async function rejectTransfer(transId) {
-      if (!confirm('¿Confirma rechazar esta solicitud de transferencia?')) return;
-      await supabaseClient.from('transferencias').update({ status: 'RECHAZADO' }).eq('id', transId);
-      alert('Transferencia rechazada.');
-      loadTransfers();
-    }
+    async function onTransferOriginOrProdChange() {
+      const origBranch = document.getElementById('trans-origin-select').value;
+      const destBranch = document.getElementById('branch-select').value;
+      const prodId = document.getElementById('trans-prod-select').value;
+      const infoDiv = document.getElementById('trans-stock-info');
+      const reasonContainer = document.getElementById('trans-overstock-reason-container');
 
-    async function loadConsolidatedMatrix() {
-      const thead = document.getElementById('consolidated-thead');
-      const tbody = document.getElementById('consolidated-tbody');
+      transferDestHasOverstock = false;
 
-      const { data: branches } = await supabaseClient.from('sucursales').select('id, name').eq('active', true).order('name');
-      const { data: stockData } = await supabaseClient.from('stock').select('*');
-
-      if (!branches || !stockData) {
-        tbody.innerHTML = `<tr><td class="p-2 text-center text-gray-500">Error al cargar datos consolidados.</td></tr>`;
+      if (!origBranch || !prodId) {
+        infoDiv.classList.add('hidden');
+        reasonContainer.classList.add('hidden');
         return;
       }
 
-      thead.innerHTML = `
-        <tr>
-          <th class="p-2 sticky left-0 bg-slate-200 z-10">Insumo</th>
-          ${branches.map(b => `<th class="p-2 text-center">${b.name}</th>`).join('')}
-        </tr>
-      `;
+      const { data: origData } = await supabaseClient.from('stock').select('qty').eq('building_id', origBranch).eq('product_id', prodId).single();
+      const origStock = origData ? origData.qty : 0;
 
-      let stockMap = {};
-      stockData.forEach(s => {
-        if (!stockMap[s.product_id]) stockMap[s.product_id] = {};
-        stockMap[s.product_id][s.building_id] = s.qty;
-      });
+      const { data: destSugeridos } = await supabaseClient.rpc('obtener_sugerido_pedido', { p_building_id: destBranch });
+      const destProdInfo = destSugeridos ? destSugeridos.find(s => s.product_id === prodId) : null;
+      const destCob = destProdInfo ? destProdInfo.cobertura_dias : 0;
 
-      tbody.innerHTML = globalProducts.map(p => {
-        let rowCells = branches.map(b => {
-          let qty = (stockMap[p.id] && stockMap[p.id][b.id] !== undefined) ? stockMap[p.id][b.id] : 0;
-          
-          let cellStyle = "bg-emerald-50 text-emerald-900";
-          if (qty <= 10) {
-            cellStyle = "bg-red-100 text-red-800 font-extrabold";
-          } else if (qty >= 200) {
-            cellStyle = "bg-amber-100 text-amber-900 font-extrabold";
-          }
+      infoDiv.classList.remove('hidden');
 
-          return `<td class="p-2 text-center ${cellStyle} border">${qty} u</td>`;
-        }).join('');
+      if (destCob > 45) {
+        transferDestHasOverstock = true;
+        reasonContainer.classList.remove('hidden');
+        infoDiv.className = 'mb-3 p-2 rounded text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300';
+        infoDiv.innerHTML = `⚠️ Origen disponible: <b>${origStock} u</b>. Tu sucursal ya posee <b>${destProdInfo.stock_actual} u</b> (${destCob} días de cobertura). Se requiere justificación de Sobrestock.`;
+      } else {
+        transferDestHasOverstock = false;
+        reasonContainer.classList.add('hidden');
+        infoDiv.className = 'mb-3 p-2 rounded text-xs font-semibold bg-blue-100 text-blue-900 border border-blue-300';
+        infoDiv.innerHTML = `ℹ Stock en Origen: <b>${origStock} u</b> | Stock en Tu Depósito: <b>${destProdInfo ? destProdInfo.stock_actual : 0} u</b> (${destCob} días de cobertura).`;
+      }
+    }
 
-        return `
-          <tr class="border-b hover:bg-gray-50">
-            <td class="p-2 font-bold capitalize text-slate-800 sticky left-0 bg-white border">${p.name}</td>
-            ${rowCells}
-          </tr>
-        `;
-      }).join('');
+    function closeNewTransferModal() {
+      document.getElementById('transfer-form-panel').classList.add('hidden');
+    }
+
+    async function submitTransfer() {
+      const destBranch = document.getElementById('branch-select').value;
+      const origBranch = document.getElementById('trans-origin-select').value;
+      const productId = document.getElementById('trans-prod-select').value;
+      const qty = parseInt(document.getElementById('trans-qty').value) || 0;
+      const reasonInput = document.getElementById('trans-overstock-reason').value.trim();
+
+      if (!origBranch || !productId || qty <= 0) return alert('Por favor completa todos los campos de la transferencia.');
+
+      if (transferDestHasOverstock && !reasonInput) {
+        return alert('Tu sucursal registra sobrestock de este insumo. Por favor ingresa la justificación obligatoria.');
+      }
+
+      const notesVal = transferDestHasOverstock ? `[Sobrestock Justificado]: ${reasonInput}` : '';
+
+      const { error } = await supabaseClient.from('transferencias').insert([{
+        origin_building_id: origBranch,
+        destination_building_id: destBranch,
+        product_id: productId,
+        qty: qty,
+        status: 'SOLICITADO',
+        requested_by: currentUser.email,
+        notes: notesVal
+      }]);
+
+      if (error) return alert(`Error al solicitar transferencia: ${error.message}`);
+
+      alert('Solicitud de transferencia registrada correctamente.');
+      closeNewTransferModal();
+      loadTransfers();
     }
 
     const savedUrl = localStorage.getItem('sb_url');
