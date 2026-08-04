@@ -1202,6 +1202,27 @@
       }).join('');
     }
 
+    async function approveOrder(orderId) {
+      if (!confirm(`¿Confirma la aprobación del pedido #${orderId}?`)) return;
+      const { error } = await supabaseClient.from('pedidos').update({ status: 'APROBADO', approved_by: currentUser.email }).eq('id', orderId);
+      if (error) alert(`Error al aprobar: ${error.message}`);
+      else {
+        alert('Pedido aprobado con éxito.');
+        loadOrders();
+      }
+    }
+
+    async function consolidateArgentinaOrders() {
+      if (!confirm('¿Confirma consolidar todos los pedidos pendientes/aprobados de las sucursales de Argentina (RN-011)?')) return;
+      
+      const { error } = await supabaseClient.from('pedidos').update({ status: 'CONSOLIDADO', approved_by: currentUser.email + ' (Consolidado AR)' }).eq('status', 'APROBADO');
+      if (error) alert(`Error al consolidar: ${error.message}`);
+      else {
+        alert('Pedidos de Argentina consolidados correctamente en solicitud única al proveedor.');
+        loadOrders();
+      }
+    }
+
     async function openOrderDetailModal(orderId, periodo, status, totalCost) {
       const panel = document.getElementById('order-detail-panel');
       const title = document.getElementById('detail-order-title');
@@ -1357,14 +1378,7 @@
         .eq('building_id', buildingId)
         .in('status', ['APROBADO', 'CONSOLIDADO']);
 
-      const { data: existingRecs } = await supabaseClient
-        .from('recepciones')
-        .select('pedido_id')
-        .eq('building_id', buildingId)
-        .not('pedido_id', 'is', null);
-
-      const usedOrderIds = new Set((existingRecs || []).map(r => r.pedido_id));
-      approvedOrdersCache = (orders || []).filter(o => !usedOrderIds.has(o.id));
+      approvedOrdersCache = orders || [];
 
       selectOrder.innerHTML = '<option value="">Sin pedido asociado (Entrega Directa)</option>' +
         approvedOrdersCache.map(o => `<option value="${o.id}">Pedido #${o.id} (${o.periodo})</option>`).join('');
